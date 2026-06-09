@@ -18,7 +18,7 @@ Kolichka is a Bulgarian grocery store price comparison platform that helps users
 
 ```bash
 # Clone and install
-git clone https://github.com/kalata/kolichka-web.git
+git clone https://github.com/kalatarz/kolichka-web.git
 cd kolichka-web
 npm install
 
