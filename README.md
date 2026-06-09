@@ -4,6 +4,16 @@
 
 Open-source web interface for the Kolichka grocery price comparison platform. This is the **web frontend** — a static UI that connects to any Kolichka-compatible API backend.
 
+## Try it (live demo)
+
+A live instance runs at **[kolichka.gotvach.com](https://kolichka.gotvach.com)** — a free grocery price-comparison app for Bulgaria. Things to try:
+
+- 🛒 **[Build & compare a basket](https://kolichka.gotvach.com/)** across nearby stores — then **share it with a link**
+- ⭐ Save **favorites** and track their prices over time
+- 🔔 Enable **push notifications** for weekly deals near you
+- 📧 Subscribe by **email** for the best weekly offers
+- 🗺️ **[Classic map view](https://kolichka.gotvach.com/classic.html)**
+
 ## What is Kolichka?
 
 Kolichka is a Bulgarian grocery store price comparison platform that helps users find the best prices across local supermarkets. This repository contains the static web UI — it connects to any Kolichka-compatible API backend.

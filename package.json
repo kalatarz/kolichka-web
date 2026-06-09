@@ -2,6 +2,7 @@
   "name": "kolichka-web",
   "version": "2.0.0",
   "description": "Kolichka — Bulgarian grocery price comparison web interface",
+  "homepage": "https://kolichka.gotvach.com",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
