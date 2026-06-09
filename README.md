@@ -2,7 +2,7 @@
 
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-Open-source web interface for the Kolichka grocery price comparison platform. This is the **web frontend** component of the [Kolichka monorepo](https://github.com/kalata/kolichka), alongside `kolichka-mobile` (iOS/Android).
+Open-source web interface for the Kolichka grocery price comparison platform. This is the **web frontend** — a static UI that connects to any Kolichka-compatible API backend.
 
 ## What is Kolichka?
 
@@ -12,7 +12,7 @@ Kolichka is a Bulgarian grocery store price comparison platform that helps users
 
 ### Prerequisites
 - Node.js 18+
-- A running Kolichka API backend (see [matcho](https://github.com/kalata/matcho) for the reference backend)
+- A running Kolichka-compatible API backend (serving the endpoints in the [API Contract](#api-contract) below)
 
 ### Development
 
@@ -136,8 +136,6 @@ The frontend expects a Kolichka-compatible backend serving these endpoints:
 - `GET /api/compare?store_ids=&product_name=` — Price comparison
 - `GET /version.json` — Version/health check
 
-See the reference backend [matcho](https://github.com/kalata/matcho) for full API documentation.
-
 ## License
 
 This project is licensed under the GNU General Public License v3.0 — see [LICENSE](LICENSE) for details.
@@ -149,8 +147,3 @@ This project is licensed under the GNU General Public License v3.0 — see [LICE
 3. Commit your changes (`git commit -m 'Add my feature'`)
 4. Push to the branch (`git push origin feature/my-feature`)
 5. Open a Pull Request
-
-## Related Projects
-
-- [kolichka-mobile](https://github.com/kalata/kolichka-mobile) — iOS/Android Flutter app
-- [matcho](https://github.com/kalata/matcho) — Reference API backend
