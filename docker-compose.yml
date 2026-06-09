@@ -1,0 +1,13 @@
+services:
+  web:
+    build: .
+    ports:
+      - "80:80"
+    environment:
+      - APP_NAME=Kolichka
+      - APP_URL=https://kolichka.example.com
+      - DISCORD_URL=
+      - DATA_SOURCE_URL=
+      - ANALYTICS_SCRIPT=
+      - ANALYTICS_WEBSITE_ID=
+    restart: unless-stopped

@@ -1,0 +1,156 @@
+# Kolichka Web
+
+[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+
+Open-source web interface for the Kolichka grocery price comparison platform. This is the **web frontend** component of the [Kolichka monorepo](https://github.com/kalata/kolichka), alongside `kolichka-mobile` (iOS/Android).
+
+## What is Kolichka?
+
+Kolichka is a Bulgarian grocery store price comparison platform that helps users find the best prices across local supermarkets. This repository contains the static web UI — it connects to any Kolichka-compatible API backend.
+
+## Quick Start
+
+### Prerequisites
+- Node.js 18+
+- A running Kolichka API backend (see [matcho](https://github.com/kalata/matcho) for the reference backend)
+
+### Development
+
+```bash
+# Clone and install
+git clone https://github.com/kalata/kolichka-web.git
+cd kolichka-web
+npm install
+
+# Copy and configure environment
+cp .env.example .env
+# Edit .env with your backend URL and settings
+
+# Start dev server (port 3000)
+npm start
+```
+
+Open http://localhost:3000 in your browser.
+
+### Configuration
+
+All runtime configuration is loaded via `.env` (dev server) or `web/config.js` (static hosting):
+
+| Variable | Description | Default |
+|---|---|---|
+| `API_PROXY_URL` | Backend API URL (proxied at `/api`) | `http://localhost:3001` |
+| `APP_NAME` | Display name in UI | `Kolichka` |
+| `APP_URL` | Public-facing URL (og:url, canonical) | *(empty)* |
+| `DISCORD_URL` | Discord community link | *(empty)* |
+| `DATA_SOURCE_URL` | Data source attribution link | *(empty)* |
+| `ANALYTICS_SCRIPT` | Umami-compatible analytics script URL | *(disabled)* |
+| `ANALYTICS_WEBSITE_ID` | Analytics website ID | *(disabled)* |
+
+## Static Hosting (Production)
+
+For production, you can serve the `web/` directory as static files from any web server (nginx, Caddy, Apache, etc.). The only requirement is that `/api/*` requests are proxied to your backend.
+
+### Nginx example
+
+```nginx
+server {
+    listen 80;
+    server_name kolichka.example.com;
+
+    # Static files
+    root /path/to/kolichka-web/web;
+    index index.html;
+
+    # API proxy
+    location /api/ {
+        proxy_pass http://localhost:3001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Auth endpoints
+    location /auth/ {
+        proxy_pass http://localhost:3001;
+        proxy_set_header Host $host;
+    }
+}
+```
+
+### Caddy example
+
+```
+kolichka.example.com {
+    root * /path/to/kolichka-web/web
+    file_server
+    encode gzip
+
+    @api path /api/* /auth/*
+    reverse_proxy @api localhost:3001
+}
+```
+
+### Custom config.js for static hosting
+
+If you are not using the Node dev server, create `web/config.js` manually:
+
+```javascript
+window.__KOLICHKA_CONFIG__ = {
+  API_BASE_URL: '/',
+  APP_NAME: 'Kolichka',
+  APP_URL: 'https://kolichka.example.com',
+  DISCORD_URL: 'https://discord.gg/your-invite',
+  DATA_SOURCE_URL: 'https://kolkostruva.bg',
+  ANALYTICS_SCRIPT: '',
+  ANALYTICS_WEBSITE_ID: '',
+};
+```
+
+## Project Structure
+
+```
+kolichka-web/
+├── web/                    # Static frontend files
+│   ├── index.html          # Redirects to v2.html
+│   ├── v2.html             # Main modern UI
+│   ├── classic.html        # Classic map-based UI
+│   ├── config.js           # Runtime configuration (generated or manual)
+│   ├── manifest.json       # PWA manifest
+│   ├── push-sw.js          # Push notification service worker
+│   ├── favicon.ico
+│   └── favicon-512.png
+├── server.js               # Node.js dev/proxy server
+├── package.json
+├── .env.example            # Environment template
+├── .gitignore
+├── LICENSE                 # GPLv3
+├── CHANGELOG.md
+└── README.md
+```
+
+## API Contract
+
+The frontend expects a Kolichka-compatible backend serving these endpoints:
+
+- `GET /api/stores` — List all stores
+- `GET /api/stores/nearby?lat=&lng=&radius=` — Stores near coordinates
+- `GET /api/compare?store_ids=&product_name=` — Price comparison
+- `GET /version.json` — Version/health check
+
+See the reference backend [matcho](https://github.com/kalata/matcho) for full API documentation.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 — see [LICENSE](LICENSE) for details.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'Add my feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a Pull Request
+
+## Related Projects
+
+- [kolichka-mobile](https://github.com/kalata/kolichka-mobile) — iOS/Android Flutter app
+- [matcho](https://github.com/kalata/matcho) — Reference API backend

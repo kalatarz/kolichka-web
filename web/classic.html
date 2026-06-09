@@ -1,0 +1,2589 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#178a5e" />
+  <title>Количка — намери най-евтиното</title>
+  <meta name="description" content="Намери къде е най-евтино да напазаруваш до теб — сравни цените на хранителни стоки в 1800+ магазина от 130+ вериги. Безплатно, обновявано всеки ден." />
+  <link rel="canonical" id="canonical-link" href="/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Количка" />
+  <meta property="og:locale" content="bg_BG" />
+  <meta property="og:url" id="og-url-meta" content="" />
+  <meta property="og:title" content="Количка — сравни цените на храните до теб" />
+  <meta property="og:description" content="Едно търсене показва къде е най-евтино около теб. 1800+ магазина, цени всеки ден. Безплатно." />
+  <meta property="og:image" content="/favicon-512.png" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Количка — сравни цените на храните до теб" />
+  <meta name="twitter:image" content="/favicon-512.png" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/config.js"></script>  <script>
+    (function() {
+      var cfg = window.__KOLICHKA_CONFIG__ || {};
+      if (cfg.APP_URL) {
+        var cl = document.getElementById('canonical-link');
+        if (cl) cl.href = cfg.APP_URL;
+        var og = document.getElementById('og-url-meta');
+        if (og) og.content = cfg.APP_URL;
+      }
+      if (cfg.DISCORD_URL) {
+        var dl = document.getElementById('discord-link');
+        if (dl) dl.href = cfg.DISCORD_URL;
+      }
+      if (cfg.DATA_SOURCE_URL) {
+        var ds = document.getElementById('datasource-link');
+        if (ds) ds.href = cfg.DATA_SOURCE_URL;
+      }
+      if (cfg.ANALYTICS_SCRIPT && cfg.ANALYTICS_WEBSITE_ID) {
+        var s = document.createElement('script');
+        s.defer = true;
+        s.src = cfg.ANALYTICS_SCRIPT;
+        s.setAttribute('data-website-id', cfg.ANALYTICS_WEBSITE_ID);
+        s.setAttribute('data-do-not-track', 'true');
+        document.head.appendChild(s);
+      }
+    })();
+
+      if (cfg.FEEDBACK_EMAIL) {
+        var fe = document.getElementById('feedback-email');
+        if (fe) { fe.href = 'mailto:' + cfg.FEEDBACK_EMAIL; fe.textContent = cfg.FEEDBACK_EMAIL; }
+      }
+      if (cfg.PRIVACY_EMAIL) {
+        var pe = document.getElementById('privacy-email');
+        if (pe) { pe.href = 'mailto:' + cfg.PRIVACY_EMAIL; pe.textContent = cfg.PRIVACY_EMAIL; }
+      }
+  </script>
+  <!-- Self-hosted analytics. Cookieless, GDPR-friendly. data-do-not-track defers
+       to navigator.doNotTrack so privacy-aware users aren't pinged. -->
+  <script>
+    // Safe wrapper — if umami is blocked / not yet loaded, we silently no-op so
+    // a missing analytics script never breaks the page.
+    window.track = function track(name, data) {
+      try { window.umami && window.umami.track && window.umami.track(name, data || {}); } catch (_) {}
+    };
+    // Stable first-party visitor id -> lets Umami measure returning users / weekly
+    // retention (umami.identify populates session.distinct_id). No PII: a random id
+    // in localStorage. Respects the same do-not-track setting as the tracker itself.
+    (function () {
+      var v; try { v = localStorage.getItem('kolichka.vid'); if (!v) { v = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)); localStorage.setItem('kolichka.vid', v); } } catch (_) { return; }
+      (function id(n) { try { if (window.umami && window.umami.identify) { window.umami.identify(v); return; } } catch (_) {} if (n < 40) setTimeout(function () { id(n + 1); }, 300); })(0);
+    })();
+
+    // When a visitor lands with utm_source=weekly-email, fire an explicit event
+    // so the email funnel shows up in Umami's Events list (not just buried in
+    // the Sources/Campaigns filter). Pairs with server-side `email-opened`:
+    //   email-opened → email-link-clicked → basket-compared
+    // Wait until the umami script has loaded (defer) before firing.
+    window.addEventListener('load', function () {
+      try {
+        var p = new URLSearchParams(location.search);
+        if (p.get('utm_source') !== 'weekly-email') return;
+        setTimeout(function () {
+          window.track('email-link-clicked', {
+            campaign: p.get('utm_campaign') || '',
+            week:     p.get('utm_content')  || '',
+            target:   p.get('utm_term')     || p.get('b') || 'home',
+          });
+        }, 400);
+      } catch (_) {}
+    });
+  </script>
+  <style>
+    :root {
+      --bg:#0e1116; --card:#171b22; --line:#262b34; --muted:#8b94a3;
+      --accent:#5dd3a8; --warn:#f0b46a; --pink:#ff5d8f;
+      --kaufland:#2c7be5; --lidl:#f0b46a; --fantastico:#5dd3a8;
+    }
+    [hidden] { display: none !important; }
+    * { box-sizing:border-box; }
+    body { font:14px/1.4 -apple-system, system-ui, sans-serif; background:var(--bg); color:#e8ecf1; margin:0; padding:12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+    h1, h2, h3 { margin:0; }
+    .sub { color:var(--muted); font-size:12px; margin-bottom:8px; }
+    input, button, select, textarea { background:var(--card); color:#e8ecf1; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; }
+    button.primary { cursor:pointer; background:var(--accent); color:#03251a; border-color:transparent; font-weight:600; }
+    button.ghost { cursor:pointer; background:transparent; }
+    button:active { transform:translateY(1px); }
+
+    /* Header (logo left, theme toggle right) */
+    .app-header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin: 0 0 8px; }
+    .app-header .header-left { display:inline-flex; align-items:center; gap:8px; min-width:0; }
+    .app-logo { display:inline-flex; align-items:center; gap:8px; color:#e8ecf1; text-decoration:none; font-weight:700; font-size:20px; padding:6px 12px; border-radius:10px; background:linear-gradient(135deg, rgba(93,211,168,0.18), rgba(93,211,168,0.04)); border:1px solid rgba(93,211,168,0.35); }
+    .app-logo .logo-text { font-weight:800; letter-spacing:-0.01em; }
+    /* single button to try the new (beta) design */
+    .beta-switch { display:inline-flex; align-items:center; gap:5px; text-decoration:none; cursor:pointer;
+      font-size:11px; font-weight:800; color:var(--accent); background:rgba(93,211,168,0.12);
+      border:1px solid rgba(93,211,168,0.4); border-radius:999px; padding:5px 10px; white-space:nowrap; }
+    .beta-switch:hover { background:rgba(93,211,168,0.2); }
+    .beta-switch .bs-tag { font-size:8px; text-transform:uppercase; background:var(--accent); color:#03251a; border-radius:4px; padding:1px 4px; letter-spacing:.03em; }
+    body.light .beta-switch { color:#178a5e; background:rgba(23,138,94,0.08); border-color:rgba(23,138,94,0.35); }
+    body.light .beta-switch .bs-tag { background:#178a5e; color:#fff; }
+    .theme-switch { width:44px; height:26px; border-radius:999px; border:1px solid var(--line); background:var(--card); display:inline-flex; align-items:center; justify-content:space-between; padding:0 6px; cursor:pointer; color:var(--muted); position:relative; }
+    .theme-switch::before { content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--muted); transition:transform 0.18s ease, background 0.18s ease; opacity:0.85; }
+    body.light .theme-switch::before { transform:translateX(18px); background:#1a1f2b; }
+    .theme-switch svg { z-index:1; }
+    .theme-switch .theme-ico-sun  { opacity:0.4; }
+    .theme-switch .theme-ico-moon { opacity:1; }
+    body.light .theme-switch .theme-ico-sun  { opacity:1; }
+    body.light .theme-switch .theme-ico-moon { opacity:0.4; }
+
+    /* Compact location bar */
+    .locbar { display:flex; gap:6px; align-items:stretch; margin-bottom:4px; }
+    .loc-btn { width:38px; padding:0; font-size:16px; flex:0 0 auto; border-radius:8px; cursor:pointer; }
+    .loc-search { flex:1; position:relative; display:flex; }
+    .loc-search input { flex:1; border-radius:8px 0 0 8px; padding-right:6px; }
+    .loc-go { width:42px; padding:0; border-radius:0 8px 8px 0; border-left:none; cursor:pointer; }
+    .addr-suggest { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--card); border:1px solid var(--line); border-radius:8px; max-height:240px; overflow:auto; z-index:1500; display:none; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+    .addr-suggest > div { padding:8px 10px; cursor:pointer; border-bottom:1px solid var(--line); font-size:12px; }
+    .addr-suggest > div:hover { background:#1d2230; }
+    .loc-radius { display:flex; align-items:center; gap:8px; padding:6px 10px; margin-bottom:6px; border:1px solid var(--line); border-radius:8px; background:var(--card); width:100%; }
+    .loc-radius .radius-label { font-size:12px; color:var(--muted); flex:0 0 auto; }
+    .loc-radius input[type=range] { flex:1 1 auto; min-width:0; accent-color:var(--accent); }
+    .loc-radius .radius-val { font-size:12px; min-width:48px; text-align:right; flex:0 0 auto; }
+    #geo-status { display:none !important; }
+    .stats { color:var(--muted); margin-bottom:8px; font-size:11px; }
+    .site-footer .stats { display:block; margin:0 0 8px; font-size:11px; }
+    body .site-footer a.discord { display:inline-block; margin:6px 4px; padding:6px 14px; background:#5865F2 !important; color:#ffffff !important; border-radius:6px; text-decoration:none !important; font-weight:600; font-size:12px; border:1px solid #5865F2; }
+    body .site-footer a.discord:hover { background:#4752c4 !important; color:#ffffff !important; }
+    body .site-footer button.subscribe { display:inline-block; margin:6px 4px; padding:6px 14px; background:#0f5d36; color:#ffffff; border-radius:6px; font-weight:600; font-size:12px; border:1px solid #0f5d36; cursor:pointer; vertical-align:baseline; line-height:normal; font-family:inherit; }
+    body .site-footer button.subscribe:hover { background:#0a4226; }
+
+    /* Map */
+    #map { height:50vh; min-height:280px; max-height:520px; border-radius:12px; border:1px solid var(--line); margin-bottom:8px; }
+    .legend { display:flex; gap:10px; flex-wrap:wrap; margin:-2px 0 12px; font-size:11px; color:var(--muted); }
+    .legend .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; vertical-align:middle; }
+    .leaflet-popup-content { color:#111; min-width:180px; max-width:260px; }
+    .map-popup b { display:block; font-size:13px; margin-bottom:4px; line-height:1.25; }
+    .map-popup .addr { font-size:12px; line-height:1.35; color:#0f1525; }
+    .map-popup .dist { font-size:11px; color:#56607a; margin-top:4px; }
+
+    /* Tabs */
+    /* Tabs — previously rendered as plain text with a thin 2 px underline. Inactive
+       tabs read as labels, not affordances → users didn't realise they were
+       clickable and bounced on the second visit. Now: pill-shaped, slight bg,
+       3 px underline on active, larger tap target (≥44 px on mobile per Apple HIG). */
+    /* Sticky so the user can switch Един продукт / Кошница / Промоции no matter
+       how far they've scrolled into a long result list — fixes the
+       "tabs sit below the fold, users never discover them" bounce issue. */
+    .tabs { display:flex; gap:6px; margin:32px 0 12px; border-bottom:1px solid var(--line); padding-bottom:1px;
+            position:sticky; top:0; z-index:100; background:var(--bg); padding-top:8px; }
+    .tab {
+      padding:10px 16px; cursor:pointer; color:var(--muted);
+      border-bottom:3px solid transparent;
+      font-weight:600; font-size:13px; user-select:none;
+      background:rgba(139,148,163,0.10);
+      border-radius:8px 8px 0 0;
+      transition:background .15s ease, color .15s ease, border-color .15s ease;
+      min-height:40px; display:inline-flex; align-items:center; gap:4px;
+    }
+    .tab:hover { background:rgba(23,138,94,0.10); color:#e8ecf1; }
+    .tab.active {
+      color:#e8ecf1;
+      border-bottom-color:var(--accent);
+      background:rgba(23,138,94,0.18);
+    }
+
+    /* Cards / chips */
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:10px; }
+    .card h3 { margin:0 0 6px; font-size:14px; }
+    /* First product card in the single-search results = the best deal.
+       Green left-stripe + faint tint + 🏆 prefix on the heading so the eye
+       knows where to land. Previously every card looked identical → no entry
+       point, results felt like a wall of text. */
+    #results-single .card[data-cid]:first-of-type {
+      border-left:4px solid var(--accent);
+      background:linear-gradient(90deg, rgba(23,138,94,0.06) 0%, var(--card) 25%);
+    }
+    #results-single .card[data-cid]:first-of-type h3::before {
+      content:"🏆 "; margin-right:2px;
+    }
+    /* The "Cheapest 'X' by chain" summary card uses dashed border (set inline)
+       — strengthen it: dashed border in WARN color + label badge so it's
+       visually distinct from the per-canonical product cards above it. */
+    #results-single .card[style*="dashed"] {
+      border:1.5px dashed #f5b342 !important;
+      background:rgba(245,179,66,0.04);
+      margin-top:18px;
+      position:relative;
+    }
+    #results-single .card[style*="dashed"]::before {
+      content:"💰 По верига"; position:absolute; top:-9px; left:14px;
+      background:var(--bg); padding:0 8px; font-size:11px; font-weight:700;
+      color:#f5b342; letter-spacing:0.3px;
+    }
+    body.light #results-single .card[data-cid]:first-of-type {
+      background:linear-gradient(90deg, rgba(23,138,94,0.08) 0%, #ffffff 30%);
+    }
+    body.light #results-single .card[style*="dashed"] {
+      background:rgba(245,179,66,0.06);
+    }
+    body.light #results-single .card[style*="dashed"]::before {
+      background:#f5f7fa; color:#b86808;
+    }
+    .pricegrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:6px; }
+    .chip { background:#0d1117; border:1px solid var(--line); border-radius:6px; padding:6px 8px; }
+    .chip .slug { color:var(--muted); text-transform:uppercase; font-size:10px; letter-spacing:0.04em; }
+    /* Price is the thing users actually compare — make it the dominant element
+       on the chip (was 18px, product meta competed with it visually). */
+    .chip .price { font-size:21px; font-weight:700; margin-top:2px; line-height:1.1; }
+    .chip .meta { font-size:11px; }
+    .chip.best { border-color:var(--accent); }
+    .chip.worst { border-color:var(--warn); opacity:0.85; }
+    .meta { color:var(--muted); font-size:11px; margin-top:4px; }
+    .spread { color:var(--warn); font-weight:600; }
+    .empty { color:var(--muted); padding:18px; text-align:center; font-size:13px; }
+    details summary { cursor:pointer; color:var(--muted); margin-top:6px; }
+    .store-row { display:flex; gap:8px; justify-content:space-between; padding:4px 0; border-bottom:1px dashed var(--line); font-size:12px; }
+    .store-row:last-child { border-bottom:none; }
+    .clickable-store { cursor:pointer; }
+    .clickable-store:hover { background:#1d2230; }
+
+    .promo-pct { display:inline-block; background:#3a1e10; color:var(--warn); border-radius:4px; padding:1px 6px; font-size:11px; font-weight:600; margin-left:4px; }
+    .snap-badge { display:inline-block; background:#0d1117; border:1px solid var(--line); border-radius:999px; padding:1px 7px; font-size:10px; color:var(--muted); margin-left:6px; vertical-align:1px; }
+    .stale-badge { display:inline-block; background:#3a1e10; border:1px solid #6a4020; border-radius:999px; padding:1px 7px; font-size:10px; color:var(--warn); margin-left:6px; vertical-align:1px; font-weight:600; }
+    .mixed-row.stale .mr-price, .item-price.stale { color:var(--muted); font-style:italic; }
+    .item-name.stale b { color:var(--muted); }
+    body.light .stale-badge { background:#fff4e6; border-color:#f2c08b; color:#b65c12; }
+    .category-badge { display:inline-block; padding:2px 8px; border-radius:4px; background:#103a2a; color:var(--accent); font-size:11px; font-weight:600; margin-left:6px; }
+
+    /* Category chips */
+    /* Chip bg was #0d1117 — virtually identical to the dark page bg (#0e1116),
+       so chips blended into the page and looked "faded", most visibly when only
+       a couple sit alone in a group sub-row (e.g. Ябълки/Банани under Плодове).
+       Use a clearly-raised surface (like the result cards) so chips read as
+       tappable, with a lighter hover. */
+    .cat-chip { background:#1c222e; border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; user-select:none; }
+    .cat-chip:hover { background:#283040; border-color:var(--accent); }
+    .cat-chip.active { background:var(--accent); color:#03251a; border-color:transparent; font-weight:600; }
+    .cat-grid { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+    /* Grouped category grid: section headers + live search filter, so the
+       31-chip wall becomes scannable (dairy / meat / produce / pantry / other). */
+    .cat-search { width:100%; box-sizing:border-box; margin-bottom:8px; padding:9px 12px;
+      border:1px solid var(--line); border-radius:8px; background:#0d1117; color:inherit;
+      font-size:13px; }
+    .cat-search:focus { outline:none; border-color:var(--accent); }
+    body.light .cat-search { background:#ffffff; border-color:#dde2eb; color:#0f1525; }
+    .cat-group-label { flex:0 0 100%; font-size:11px; font-weight:700; color:var(--muted);
+      text-transform:uppercase; letter-spacing:0.04em; margin:8px 2px 0; }
+    .cat-grid.grouped .cat-group-label:first-child { margin-top:0; }
+    .cat-grid.grouped { flex-wrap:wrap; }
+    /* Two-level drill-down (single tab): level-1 group chips are larger/bolder
+       than the article chips that appear in the sub-row below them. */
+    .cat-grid.cat-groups { flex-wrap:wrap; }
+    .cat-group-chip { background:rgba(23,138,94,0.10); border:1px solid var(--line);
+      border-radius:999px; padding:8px 15px; font-size:13px; font-weight:600; cursor:pointer;
+      display:inline-flex; align-items:center; gap:5px; user-select:none; }
+    .cat-group-chip:hover { border-color:var(--accent); }
+    .cat-group-chip.active { background:var(--accent); color:#03251a; border-color:transparent; }
+    .cat-sub { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 10px; }
+    .cat-sub:empty { margin:0; }
+    .cat-sub-hint { flex:0 0 100%; font-size:11px; color:var(--muted); margin-bottom:2px; }
+    /* Bounded search area + results divider — makes "what you search" vs "what
+       you get" obvious, reducing the stacked-controls confusion on mobile. */
+    .search-panel { border:1px solid var(--line); border-radius:14px; padding:12px 12px 6px;
+      margin-bottom:14px; background:rgba(127,160,255,0.03); }
+    body.light .search-panel { background:#f7f9fc; border-color:#e3e8f0; }
+    /* One shared section-header look for BOTH the search-panel labels
+       (🔍 Търси продукт / 🛒 Добави продукти / 🧺 Твоята кошница / 🏷️ Намери
+       промоции) and the results headers (Резултати / Промоции …) so the whole
+       app reads consistently. */
+    .panel-label, .results-head { display:flex; align-items:center; gap:10px;
+      font-size:13px; font-weight:700; color:#e8ecf1; letter-spacing:normal; text-transform:none;
+      margin:2px 0 12px; }
+    body.light .panel-label, body.light .results-head { color:#0f1525; }
+    .panel-label::after, .results-head::after { content:""; flex:1; height:1px; background:var(--line); }
+    /* Results headers start a new major section → 32px breathing room above. */
+    .results-head { margin-top:32px; }
+    .results-head:empty { display:none; }
+    .search-panel .basket-row { margin-left:0; margin-right:0; padding-left:0; padding-right:0; }
+    /* Single-tab search row: input stays wide enough to read what you type;
+       [Покажи N] + [Сравни] are grouped so they wrap to the next row together
+       when space is tight (rather than overflowing or splitting). The sticky
+       row's bottom border is dropped inside the bounded panel. */
+    #tab-single .search-panel .basket-row { flex-wrap:wrap; align-items:center; border-bottom:none; }
+    #tab-single .search-panel .basket-row > #q { flex:1 1 220px; min-width:150px; }
+    #tab-single .single-row-controls { display:inline-flex; align-items:center; gap:6px; flex:0 0 auto; }
+    #tab-single .single-row-controls > label.sub { margin:0; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
+    #tab-single .single-row-controls #reslimit { padding:8px 6px; }
+    #tab-single .single-row-controls > #go-single { white-space:nowrap; }
+    /* Highlight the favorites panel when something is just saved into it. */
+    @keyframes favflash { 0%,100% { box-shadow:0 0 0 0 rgba(255,45,85,0); } 25% { box-shadow:0 0 0 3px rgba(255,45,85,0.45); } }
+    .fav-panel.fav-flash { animation: favflash 1.1s ease; border-radius:8px; }
+    /* brief "added to basket" confirmation flash on an article chip */
+    .cat-chip.added { background:var(--accent); color:#03251a; border-color:transparent; }
+    /* In light theme `body.light .cat-chip` (0,2,1) out-specifies the bare
+       `.cat-chip.added` (0,2,0), so the green "added" flash never showed —
+       scope it under body.light to win. */
+    body.light .cat-chip.added { background:#0f5d36; color:#ffffff; border-color:transparent; }
+    body.light .cat-group-chip { background:rgba(23,138,94,0.08); border-color:#dde2eb; color:#0f1525; }
+    /* Active fill darkened #178a5e → #0f5d36: white text on the lighter green was
+       only ~4.3:1 (below WCAG AA) and visibly faded on mobile in light mode.
+       #0f5d36 gives ~7.9:1. */
+    body.light .cat-group-chip.active { background:#0f5d36; color:#ffffff; border-color:transparent; }
+
+    /* Basket */
+    .basket-row { display:flex; gap:6px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+    .basket-items { display:flex; gap:6px; flex-wrap:wrap; min-height:24px; margin-bottom:8px; }
+    .shared-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, rgba(93,211,168,0.14), rgba(93,211,168,0.04));
+      border: 1px solid rgba(93,211,168,0.30);
+      color: #e8ecf1;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .shared-banner .sb-text { flex: 1; min-width: 0; }
+    .shared-banner a { color: var(--accent); }
+    .shared-banner .banner-x {
+      flex: none; background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 18px; line-height: 1; padding: 0 2px;
+    }
+    .shared-banner .banner-x:hover { color: #e8ecf1; }
+    body.light .shared-banner .banner-x:hover { color: #1a1f2b; }
+    body.light .shared-banner {
+      background: linear-gradient(135deg, rgba(23,138,94,0.10), rgba(23,138,94,0.03));
+      border-color: rgba(23,138,94,0.30);
+      color: #1a1f2b;
+    }
+    body.light .shared-banner a { color: #178a5e; }
+    #basket-share { display:inline-flex; align-items:center; gap:4px; }
+    /* Favorites */
+    .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .card-head h3 { flex: 1; min-width: 0; margin: 0; }
+    /* Heart glyph is a text character (not emoji), so it takes `color` and stays
+       visible on both themes. Off = outlined heart; saved = filled heart. */
+    .fav-item-btn { flex: none; background: rgba(255,45,85,0.08); border: 1px solid rgba(255,45,85,0.40);
+      border-radius: 8px; cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 8px; color: #ff2d55;
+      transition: background .12s, border-color .12s, transform .08s; }
+    .fav-item-btn:hover { background: rgba(255,45,85,0.16); border-color: rgba(255,45,85,0.65); }
+    .fav-item-btn:active { transform: scale(0.9); }
+    .fav-item-btn.fav-on { color: #ff2d55; background: rgba(255,45,85,0.20); border-color: rgba(255,45,85,0.75); }
+    .fav-star { color: #ff2d55; }
+    .chip { position: relative; }
+    .fav-item-btn.chip-fav { position: absolute; top: 2px; right: 2px; border: none; background: none; padding: 0 3px; font-size: 16px; }
+    .fav-item-btn.chip-fav:hover { background: rgba(255,45,85,0.16); }
+    .fav-panel { margin: 4px 0 8px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .fav-head { width: 100%; display: flex; justify-content: space-between; align-items: center;
+      background: var(--card); color: #e8ecf1; border: none; cursor: pointer; padding: 8px 12px;
+      font-size: 13px; font-weight: 600; }
+    body.light .fav-head { color: #1a1f2b; }
+    .fav-head .fav-caret { transition: transform .15s; color: var(--muted); }
+    .fav-head[aria-expanded="true"] .fav-caret { transform: rotate(180deg); }
+    .fav-body { padding: 8px 12px; border-top: 1px solid var(--line); }
+    .fav-hint { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+    .fav-items { display: flex; flex-wrap: wrap; gap: 6px; min-height: 4px; }
+    .fav-items .empty { color: var(--muted); font-size: 12px; padding: 2px 0; }
+    .fav-chip { cursor: pointer; }
+    .fav-chip:hover { background: rgba(23,138,94,0.22); border-color: rgba(23,138,94,0.55); }
+    .fav-chip .fav-pick { display: inline-flex; align-items: center; }
+    .fav-chip { display: inline-flex; align-items: center; gap: 4px; background: rgba(23,138,94,0.12);
+      border: 1px solid rgba(23,138,94,0.30); border-radius: 14px; padding: 3px 8px; font-size: 12px; color: #e8ecf1; }
+    body.light .fav-chip { color: #1a1f2b; background: rgba(23,138,94,0.08); }
+    .fav-chip button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
+    .fav-chip button:hover { color: var(--warn); }
+    .fav-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .single-fav-bar { display: flex; justify-content: flex-end; margin: 2px 0 6px; }
+    /* Link text stays a neutral accent; only the heart glyph (.fav-star) is red.
+       The #id keeps it winning over `body.light button { color:#0f1525 }`. */
+    #single-fav-link.fav-link { background: none; border: none; cursor: pointer; font-size: 12px;
+      font-weight: 600; color: var(--accent); padding: 4px 2px; display: inline-flex;
+      align-items: center; gap: 4px; }
+    .fav-link:hover { text-decoration: underline; }
+    @media (max-width: 480px) {
+      #basket-share { padding: 8px 10px; font-size: 12px; }
+    }
+    .item-chip { background:#0d1117; border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:12px; display:inline-flex; align-items:center; gap:6px; color:#e8ecf1; }
+    .item-chip button { background:none; border:none; color:var(--muted); cursor:pointer; padding:0; font-size:14px; }
+    body.light .item-chip { background:#eef2f8; border-color:#dde2eb; color:#0f1525; }
+    body.light .item-chip button { color:#56607a; }
+    .basket-card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+    .basket-card.mixed { border:2px solid var(--accent); background:linear-gradient(180deg, rgba(23,138,94,0.10), var(--card)); }
+    .basket-card.mixed .mixed-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:6px; }
+    .basket-card.mixed .mixed-title { font-size:14px; font-weight:700; color:var(--accent); }
+    .basket-card.mixed .mixed-sub { font-size:11px; color:var(--muted); }
+    /* Tabular grid: one shared template across all rows so the 3 columns align */
+    .basket-card.mixed .mixed-rows { margin-top:6px; display:grid; grid-template-columns:minmax(0, 1.4fr) minmax(0, 1fr) max-content; column-gap:10px; align-items:baseline; }
+    .basket-card.mixed .mixed-row { display:contents; cursor:pointer; }
+    .basket-card.mixed .mixed-row > * { padding:7px 0; border-bottom:1px dashed var(--line); font-size:12px; }
+    .basket-card.mixed .mixed-row:last-child > * { border-bottom:none; }
+    .basket-card.mixed .mr-name { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+    .basket-card.mixed .mr-name b { color:#e8ecf1; }
+    .basket-card.mixed .mr-shop { color:var(--accent); font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+    .basket-card.mixed .mr-price { font-weight:600; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+    .basket-card.mixed .mr-missing { color:var(--warn); }
+    .basket-card.mixed .mixed-row:hover > * { background:rgba(23,138,94,0.06); }
+    @media (max-width: 480px) {
+      .basket-card.mixed .mixed-rows { font-size:11px; column-gap:8px; }
+      .basket-card.mixed .mixed-row > * { font-size:11px; padding:6px 0; }
+    }
+    .basket-card.mixed .mixed-footer { margin-top:8px; padding-top:8px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:baseline; }
+    .basket-card.mixed .mixed-savings { color:var(--accent); font-size:12px; }
+    body.light .basket-card.mixed { background:linear-gradient(180deg, rgba(23,138,94,0.10), #ffffff); }
+    body.light .basket-card.mixed .mixed-row .mr-name b { color:#0f1525; }
+    body.light .basket-card.mixed .mixed-row .mr-name { color:#3a4358; }
+    body.light .basket-card.mixed .snap-badge { background:#ffffff; border-color:#cfd6e0; color:#3a4358; }
+    .basket-total { font-size:22px; font-weight:700; }
+    .basket-complete { color:var(--accent); }
+    .basket-partial { color:var(--warn); }
+    .basket-breakdown { display:grid; grid-template-columns:1fr auto; gap:2px 8px; margin-top:6px; font-size:12px; }
+    .basket-breakdown .item-name { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .basket-breakdown .item-name b { color:#e8ecf1; }
+    .basket-breakdown .item-price { font-variant-numeric:tabular-nums; }
+    .basket-breakdown .item-missing { color:var(--warn); }
+
+    /* Promotions */
+    .promo-card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+    .promo-card h3 { margin:0 0 6px; font-size:14px; display:flex; justify-content:space-between; align-items:baseline; }
+    .promo-card .chain-name { font-weight:600; }
+    .promo-card .store-count { color:var(--muted); font-size:11px; font-weight:400; }
+    .promo-item { display:grid; grid-template-columns:1fr auto auto; gap:6px 12px; padding:6px 0; border-bottom:1px dashed var(--line); align-items:baseline; font-size:13px; }
+    .promo-item:last-child { border-bottom:none; }
+    .promo-item .name { overflow:hidden; text-overflow:ellipsis; }
+    .promo-item .retail { color:var(--muted); text-decoration:line-through; font-size:11px; }
+    .promo-item .promo { color:var(--accent); font-weight:600; font-variant-numeric:tabular-nums; }
+    .promo-item .pct { background:#3a1e10; color:var(--warn); border-radius:4px; padding:1px 6px; font-size:11px; font-weight:600; }
+
+    /* Footer + feedback */
+    footer.app-footer { margin-top:24px; padding:18px 4px 24px; border-top:1px solid var(--line); text-align:center; color:var(--muted); font-size:12px; }
+    .fb-prompt { font-size:13px; margin-bottom:6px; }
+    .stars { display:inline-flex; gap:4px; font-size:24px; cursor:pointer; }
+    .stars span { color:var(--line); transition:color 0.1s; user-select:none; }
+    .stars span.lit { color:#f5b342; }
+    .stars span:hover { transform:scale(1.1); }
+    .fb-comment { display:none; margin-top:8px; }
+    .fb-comment input { width:280px; max-width:90%; }
+    .fb-thanks { display:none; color:var(--accent); font-weight:600; margin-top:6px; }
+
+    
+    .fb-cat { padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:#e8ecf1; font:13px/1.2 -apple-system, system-ui, sans-serif; cursor:pointer; }
+    .fb-cat.active { background:var(--accent); color:#03251a; border-color:transparent; font-weight:600; }
+    body.light .fb-cat { background:#f1f4f8; color:#0f1525; border-color:#dde2eb; }
+    body.light .fb-cat.active { background:#178a5e; color:#fff; }
+
+        /* Release notes banner */
+    .release-banner {
+      background: linear-gradient(135deg, rgba(93,211,168,0.14), rgba(93,211,168,0.04));
+      border: 1px solid rgba(93,211,168,0.3);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      display: none;
+      position: relative;
+    }
+    .release-banner.visible { display: block; }
+    .release-banner .rb-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .release-banner .rb-title {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 14px;
+    }
+    .release-banner .rb-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 2px 6px;
+      line-height: 1;
+    }
+    .release-banner .rb-close:hover { color: #e8ecf1; }
+    .release-banner ul {
+      margin: 0 0 8px;
+      padding-left: 18px;
+    }
+    .release-banner li {
+      margin-bottom: 3px;
+      color: var(--muted);
+    }
+    .release-banner .rb-discord {
+      display: inline-block;
+      padding: 5px 14px;
+      background: #5865F2;
+      color: #fff !important;
+      border-radius: 6px;
+      text-decoration: none !important;
+      font-weight: 600;
+      font-size: 12px;
+      border: 1px solid #5865F2;
+    }
+    .release-banner .rb-discord:hover { background: #4752c4; }
+    body.light .release-banner {
+      background: linear-gradient(135deg, rgba(23,138,94,0.10), rgba(23,138,94,0.03));
+      border-color: rgba(23,138,94,0.3);
+    }
+    body.light .release-banner li { color: #56607a; }
+
+    /* Cookie consent banner */
+    #cookie-banner { position:fixed; left:50%; transform:translateX(-50%); bottom:14px; max-width:560px; width:calc(100% - 24px); padding:14px 18px; background:#ffffff; color:#0f1525; border:1px solid #dde2eb; border-radius:12px; box-shadow:0 6px 24px rgba(15,21,37,.18); font:13px/1.4 -apple-system, system-ui, sans-serif; z-index:8000; display:flex; gap:14px; align-items:center; }
+    #cookie-banner span { flex:1; }
+    #cookie-banner a { color:#178a5e; text-decoration:underline; }
+    #cookie-banner button { background:#178a5e; color:#fff; border:none; border-radius:8px; padding:8px 16px; font-weight:600; cursor:pointer; font-size:13px; }
+    body.light #cookie-banner { background:#ffffff; }
+    /* Site footer links (legal, sources) */
+    .site-footer { margin-top:14px; padding:14px 4px 18px; border-top:1px solid var(--line); text-align:center; color:var(--muted); font-size:11px; }
+    .site-footer a { color:var(--muted); margin:0 6px; text-decoration:underline; }
+    body.light .site-footer { border-top-color:#dde2eb; color:#56607a; }
+    body.light .site-footer a { color:#56607a; }
+
+    /* ===== Light theme (default) ===== */
+    body.light {
+      --bg:#f5f7fa; --card:#ffffff; --line:#dde2eb; --muted:#56607a;
+      --accent:#178a5e; --warn:#b65c12; --pink:#c81f6b;
+      --kaufland:#205fa6; --lidl:#b65c12; --fantastico:#178a5e;
+      color:#0f1525;
+    }
+    body.light a { color:#0f1525; }
+    body.light input, body.light button, body.light select, body.light textarea { background:#ffffff; color:#0f1525; border-color:#cfd6e2; }
+    body.light button.primary { background:#178a5e; color:#ffffff; }
+    body.light .app-logo { color:#0f2a1f; background:linear-gradient(135deg, rgba(29,156,110,0.16), rgba(29,156,110,0.03)); border-color:rgba(29,156,110,0.4); }
+    body.light .stats, body.light .meta, body.light .sub { color:#56607a; }
+    body.light .chip { background:#f1f4f8; border-color:#dde2eb; }
+    body.light .chip .price { color:#0f1525; }
+    body.light .chip.best { border-color:#178a5e; box-shadow:0 0 0 1px rgba(23,138,94,0.18); }
+    body.light .chip.worst { border-color:#b65c12; opacity:1; }
+    body.light .card, body.light .basket-card, body.light .promo-card { background:#ffffff; border-color:#e3e7ee; box-shadow:0 1px 2px rgba(15,21,37,0.04); }
+    body.light .basket-total.basket-complete { color:#178a5e; }
+    body.light .basket-total.basket-partial { color:#b65c12; }
+    body.light .item-chip { background:#f1f4f8; color:#0f1525; }
+    body.light .snap-badge { background:#eef1f6; border-color:#dde2eb; color:#56607a; }
+    body.light .basket-card .basket-breakdown .item-name { color:#3a4358; }
+    body.light .basket-card .basket-breakdown .item-name b { color:#0f1525; }
+    body.light .basket-card .basket-breakdown .item-price { color:#0f1525; }
+    body.light .basket-card .snap-badge { background:#ffffff; border-color:#cfd6e0; color:#3a4358; }
+    body.light .cat-chip { background:#ffffff; border-color:#dde2eb; color:#0f1525; }
+    body.light .cat-chip.active { background:#0f5d36; color:#ffffff; border-color:transparent; }
+    body.light .cat-chip:hover { background:#f5f7fa; border-color:#178a5e; }
+    body.light .clickable-store:hover { background:#f1f4f8; }
+    body.light .tabs { border-bottom-color:#dde2eb; background:#f5f7fa; }
+    body.light .tab { color:#56607a; background:rgba(15,21,37,0.05); }
+    body.light .tab:hover { background:rgba(23,138,94,0.10); color:#178a5e; }
+    body.light .tab.active { color:#178a5e; border-bottom-color:#178a5e; background:rgba(23,138,94,0.12); }
+    body.light .leaflet-popup-content { color:#0f1525; }
+    body.light .category-badge { background:#dff3ea; color:#136a48; }
+    body.light .spread { color:#b65c12; }
+    body.light .item-missing { color:#b65c12; }
+    body.light .promo-item .pct { background:#fff2e2; color:#9a4d0c; }
+    body.light .promo-item .promo { color:#178a5e; }
+    body.light .promo-item .retail { color:#56607a; }
+    body.light .promo-pct { background:#fff2e2; color:#9a4d0c; }
+    body.light .empty { color:#56607a; }
+    body.light .legend { color:#56607a; }
+    body.light .leaflet-control-attribution { background:rgba(255,255,255,.85) !important; color:#56607a; }
+    body.light .leaflet-control-attribution a { color:#178a5e; }
+    body.light footer.app-footer { color:#56607a; border-top-color:#dde2eb; }
+    body.light .fb-thanks { color:#178a5e; }
+    body.light .addr-suggest { background:#ffffff; }
+    body.light .addr-suggest > div:hover { background:#f1f4f8; }
+
+    /* ===== Mobile (≤640px): trim everything that pushes search below the fold ===== */
+    @media (max-width: 640px) {
+      body { padding:8px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+      .app-header { margin-bottom:6px; }
+      .app-logo { font-size:16px; padding:4px 10px; gap:6px; }
+      .app-logo .logo-text { letter-spacing:0; }
+      .locbar { gap:4px; }
+      .locbar .loc-btn { width:36px; }
+      .locbar .loc-go { width:38px; }
+      .loc-radius { padding:5px 10px; margin-bottom:6px; }
+      .loc-radius .radius-val { min-width:44px; font-size:11px; }
+      #map { height:36vh; min-height:200px; }
+      /* Stores legend: one swipeable row on mobile instead of wrapping into
+         many lines (keeps the map area compact). */
+      .legend { font-size:10px; gap:10px; margin:-2px -8px 8px; padding:2px 8px 6px;
+        flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin;
+        scroll-snap-type:x proximity; }
+      .legend > * { flex:0 0 auto; white-space:nowrap; scroll-snap-align:start; }
+      .legend::-webkit-scrollbar { height:3px; }
+      .legend::-webkit-scrollbar-thumb { background:var(--line); border-radius:3px; }
+      .tabs { gap:4px; margin:32px 0 8px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+      .tab { padding:10px 14px; font-size:13px; white-space:nowrap; min-height:44px; }
+      /* Category chips: horizontal scroll on mobile so they take ONE row */
+      .cat-grid { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; margin:0 -8px 8px; padding-left:8px; padding-right:8px; scrollbar-width:thin; }
+      .cat-grid::after { content:""; flex:0 0 4px; }
+      .cat-chip { flex:0 0 auto; padding:6px 10px; font-size:12px; }
+      /* Grouped grid wraps vertically (group headers need full-width line breaks)
+         and is height-capped with internal scroll so it doesn't bury the results. */
+      .cat-grid.grouped { flex-wrap:wrap; overflow-x:visible; margin:0 0 8px; padding:0; max-height:44vh; overflow-y:auto; }
+      .cat-grid.grouped::after { content:none; }
+      .cat-grid.grouped .cat-chip { flex:0 0 auto; }
+      /* Two-level: the GROUP chips swipe horizontally in one row (was wrapping
+         into 3–4 lines); the sub-row of articles still wraps below. */
+      .cat-grid.cat-groups { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch;
+        margin:0 -8px 8px; padding:0 8px 4px; scrollbar-width:thin; }
+      .cat-grid.cat-groups::after { content:""; flex:0 0 4px; }
+      .cat-grid.cat-groups .cat-group-chip { flex:0 0 auto; white-space:nowrap; }
+      .cat-grid.cat-groups::-webkit-scrollbar { height:3px; }
+      .cat-grid.cat-groups::-webkit-scrollbar-thumb { background:var(--line); border-radius:3px; }
+      .cat-sub { overflow-x:visible; }
+      /* Search row: sticky to top of viewport so action is always reachable */
+      /* Stick the search row BELOW the tab bar (~54px tall), not at top:0 — two
+         opaque sticky elements sharing top:0 overlap, which on iOS Safari can
+         leave the tab bar uncovered-but-untappable after switching tabs mid-
+         scroll, and also hid this row behind the tabs. z-index stays under the
+         tabs' z:100 so the bar always wins. */
+      #tab-single .basket-row, #tab-basket .basket-row, #tab-promotions .basket-row { position:sticky; top:54px; z-index:50; background:var(--bg); padding:4px 0 6px; margin:0 -8px; padding-left:8px; padding-right:8px; border-bottom:1px solid var(--line); }
+      #tab-single .basket-row input { font-size:15px; }
+      .pricegrid { grid-template-columns:repeat(2, 1fr); gap:4px; }
+      .chip { padding:6px 7px; }
+      .chip .price { font-size:18px; }
+      .card { padding:10px 12px; margin-bottom:6px; }
+      .card h3 { font-size:13px; }
+      .basket-card { padding:10px 12px; }
+      .basket-total { font-size:18px; }
+      .basket-breakdown { font-size:11px; }
+      .promo-card { padding:10px 12px; }
+      .promo-item { font-size:12px; gap:4px 8px; padding:5px 0; }
+      footer.app-footer { margin-top:18px; padding:14px 4px 18px; }
+    }
+    /* Even tighter — very small phones */
+    @media (max-width: 380px) {
+      .app-logo .logo-text { display:none; }
+      .app-logo { padding:6px 8px; }
+    }
+
+    /* Subscription pop-in — bottom-right toast, 60-sec dwell trigger.
+       Best-practice constraints: non-blocking (not a modal), Esc dismisses,
+       hidden once dismissed or subscribed (localStorage), respects reduced motion. */
+    #sub-popup {
+      position: fixed;
+      right: 16px;
+      bottom: calc(16px + env(safe-area-inset-bottom));
+      width: 320px;
+      max-width: calc(100vw - 32px);
+      background: var(--card);
+      color: #e8ecf1;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px 18px 14px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
+      z-index: 4000;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: transform .28s cubic-bezier(.2,.7,.3,1), opacity .22s ease;
+      pointer-events: none;
+    }
+    #sub-popup.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
+    @media (prefers-reduced-motion: reduce) { #sub-popup { transition: none; transform: none; } }
+
+    #sub-popup .sub-close {
+      position: absolute; top: 8px; right: 10px;
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 18px; line-height: 1; padding: 4px 6px;
+    }
+    #sub-popup .sub-close:hover { color: #e8ecf1; }
+
+    #sub-popup .sub-emoji { font-size: 22px; line-height: 1; margin-bottom: 4px; }
+    #sub-popup .sub-title {
+      font-weight: 700; color: var(--accent); font-size: 15px; margin-bottom: 4px;
+    }
+    #sub-popup .sub-desc { color: var(--muted); font-size: 12px; line-height: 1.45; margin-bottom: 10px; }
+    #sub-popup .sub-savings {
+      display: none; /* hidden until fetched real number arrives */
+      background: linear-gradient(135deg, rgba(93,211,168,0.18), rgba(93,211,168,0.06));
+      color: var(--accent);
+      border: 1px solid rgba(93,211,168,0.35);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 4px 0 8px;
+    }
+    body.light #sub-popup .sub-savings {
+      background: linear-gradient(135deg, rgba(23,138,94,0.10), rgba(23,138,94,0.03));
+      color: #178a5e;
+      border-color: rgba(23,138,94,0.3);
+    }
+    #sub-popup .sub-loc { color: var(--muted); font-size: 11px; margin: 4px 0 8px;
+      display: flex; align-items: center; gap: 4px; }
+    #sub-popup .sub-loc.has-loc { color: var(--accent); }
+
+    #sub-popup form { display: flex; gap: 6px; }
+    #sub-popup input[type=email] {
+      flex: 1; min-width: 0; background: #0d1117;
+      padding: 9px 10px; font-size: 13px;
+    }
+    #sub-popup button[type=submit] {
+      background: var(--accent); color: #03251a; border-color: transparent;
+      font-weight: 700; padding: 9px 14px; font-size: 13px; cursor: pointer;
+      white-space: nowrap;
+    }
+    #sub-popup button[type=submit]:disabled {
+      opacity: 0.5; cursor: not-allowed;
+    }
+    #sub-popup .sub-hint {
+      color: var(--muted); font-size: 10px; margin: 8px 0 0;
+    }
+    #sub-popup .sub-msg {
+      margin-top: 8px; padding: 8px 10px; border-radius: 8px;
+      font-size: 12px; display: none;
+    }
+    #sub-popup .sub-msg.ok    { display: block; background: rgba(93,211,168,0.12); color: var(--accent); }
+    #sub-popup .sub-msg.err   { display: block; background: rgba(255,93,143,0.12); color: var(--pink); }
+
+    /* On small screens: anchor full-width bottom for thumb reach. */
+    @media (max-width: 480px) {
+      #sub-popup {
+        right: 8px; left: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
+        width: auto; max-width: none;
+      }
+    }
+    body.light #sub-popup {
+      background: #fff; color: #1a1f2b;
+      border-color: #e5e7eb;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08);
+    }
+    body.light #sub-popup .sub-desc,
+    body.light #sub-popup .sub-loc,
+    body.light #sub-popup .sub-hint { color: #56607a; }
+    body.light #sub-popup .sub-title { color: #178a5e; }
+    body.light #sub-popup input[type=email] { background: #f6f7f9; color: #1a1f2b; border-color: #e5e7eb; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <a href="/classic.html" class="app-logo" aria-label="Количка — начало">
+        <span>🛒</span><span class="logo-text">Количка</span>
+      </a>
+      <a href="/" class="beta-switch" title="Виж новия изглед">✨ Нов изглед</a>
+    </div>
+    <button class="theme-switch" id="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Превключи тъмен/светъл режим" title="Тема">
+      <svg class="theme-ico-moon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
+      <svg class="theme-ico-sun"  viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.41-1.41M4.93 19.07 6.34 17.66m0-11.31L4.93 4.93m14.14 14.14-1.41-1.41"/></svg>
+    </button>
+  </header>
+
+  <!-- Release notes moved to the footer (button reveals them) -->
+
+  <div class="locbar">
+    <button class="loc-btn" id="use-location" type="button" aria-label="Моята локация" title="Намери моята локация">📍</button>
+    <div class="loc-search">
+      <input id="addr-input" placeholder="Адрес или град…" autocomplete="off" />
+      <button class="loc-go" id="addr-go" type="button" aria-label="Намери" title="Намери">🔍</button>
+      <div id="addr-suggest" class="addr-suggest"></div>
+    </div>
+  </div>
+  <div class="loc-radius">
+    <span class="radius-label">Радиус</span>
+    <input id="radius" type="range" min="0.5" max="25" step="0.5" value="1" aria-label="Радиус (км)" />
+    <span class="radius-val" id="radius-val">1.0 км</span>
+  </div>
+  <span class="sub" id="geo-status" aria-live="polite"></span>
+
+  <div id="map"></div>
+  <!-- Legend is rebuilt dynamically by refreshMap() to reflect the chains
+       actually visible in the current radius. -->
+  <div class="legend" id="legend">
+    <span id="map-counter"></span>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <div class="tab active" data-tab="single" role="tab">🔍 Един продукт</div>
+    <div class="tab" data-tab="basket" role="tab">🧺 Кошница</div>
+    <div class="tab" data-tab="promotions" role="tab">🏷️ Промоции</div>
+  </div>
+
+  <section id="tab-single">
+    <div class="panel-label">🔍 Търси продукт</div>
+    <div class="search-panel">
+      <div class="cat-grid cat-groups" id="cat-grid-single"></div>
+      <div class="cat-sub" id="cat-sub-single"></div>
+      <div class="basket-row">
+        <input id="q" placeholder="хляб, мляко, кашкавал…" value="хляб" autocomplete="off" style="flex:1 1 220px; min-width:150px" />
+        <div class="single-row-controls">
+          <label class="sub">Покажи
+            <select id="reslimit">
+              <option value="3">до 3</option>
+              <option value="5" selected>до 5</option>
+              <option value="7">до 7</option>
+              <option value="10">до 10</option>
+              <option value="20">до 20</option>
+            </select>
+          </label>
+          <button class="primary" id="go-single" type="button">Сравни</button>
+        </div>
+      </div>
+      <div class="single-fav-bar">
+        <button type="button" id="single-fav-link" class="fav-link" title="Отвори любимите в раздел Кошница, за да ги заредиш"><span class="fav-star">♥</span> Любими (<span id="single-fav-count">0</span>) — зареди в кошницата →</button>
+      </div>
+    </div>
+    <div class="results-head" id="results-head-single"></div>
+    <div id="results-single"></div>
+  </section>
+
+  <section id="tab-basket" hidden>
+    <!-- Favorites first: returning shoppers (same items every week) land here to
+         pick their usual products. Hidden entirely when empty so new users see
+         no clutter; expanded by default once they have favourites. -->
+    <div id="fav-panel" class="fav-panel" hidden>
+      <button type="button" id="fav-head" class="fav-head" aria-expanded="true">
+        <span><span class="fav-star">♥</span> Любими (<span id="fav-count">0</span>)</span>
+        <span class="fav-caret">▾</span>
+      </button>
+      <div id="fav-body" class="fav-body">
+        <div class="fav-hint">Натисни продукт, за да го добавиш в кошницата, или зареди целия списък.</div>
+        <div id="fav-items" class="fav-items"></div>
+        <div class="fav-actions">
+          <button type="button" class="primary" id="fav-load">Зареди целия списък</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel-label">🛒 Добави продукти</div>
+    <div class="search-panel">
+      <div class="sub" style="margin-bottom:8px">Натисни категория или въведи продукт.</div>
+      <div class="cat-grid cat-groups" id="cat-grid-basket"></div>
+      <div class="cat-sub" id="cat-sub-basket"></div>
+      <div class="basket-row">
+        <input id="basket-input" placeholder="продукт, после натисни +" style="flex:1; min-width:160px" autocomplete="off" />
+        <button class="primary" id="basket-add" type="button">+ Добави</button>
+      </div>
+    </div>
+    <div class="panel-label" id="basket-list-head" style="margin-top:32px">🧺 Твоята кошница</div>
+    <div class="basket-items" id="basket-items"></div>
+    <div class="basket-row">
+      <button class="primary" id="go-basket" type="button">Намери най-евтините магазини</button>
+      <button class="ghost" id="basket-share" type="button" title="Сподели списъка с приятел">📤 Сподели</button>
+      <button class="ghost" id="fav-save-basket" type="button" title="Запази текущата кошница като любими">♥ Запази в любими</button>
+      <button class="ghost" id="basket-clear" type="button">Изчисти филтър</button>
+    </div>
+    <div id="shared-banner" class="shared-banner" hidden>
+      <span class="sb-text">📨 Това е споделена кошница. Редактирай я свободно или <a href="#" id="shared-clear">започни нова</a>.</span>
+      <button type="button" id="shared-dismiss" class="banner-x" aria-label="скрий">×</button>
+    </div>
+    <div class="results-head" id="results-head-basket"></div>
+    <div id="results-basket"></div>
+  </section>
+
+  <section id="tab-promotions" hidden>
+    <div class="panel-label">🏷️ Намери промоции</div>
+    <div class="search-panel">
+      <div class="sub" style="margin-bottom:8px">Промоции в магазините около теб. Търси по име или избери категории.</div>
+      <div class="basket-row">
+        <input id="promo-q" placeholder="хляб, кашкавал, кисело мляко…" autocomplete="off" style="flex:1; min-width:160px" />
+        <button class="primary" id="promo-go" type="button">Покажи</button>
+      </div>
+      <div class="cat-grid cat-groups" id="cat-grid-promos"></div>
+      <div class="cat-sub" id="cat-sub-promos"></div>
+      <div class="basket-row">
+        <button class="ghost" id="promo-clear-cats" type="button">Изчисти филтри</button>
+        <span id="promo-freshness" class="sub" style="margin-left:auto; align-self:center"></span>
+      </div>
+    </div>
+    <div class="results-head" id="results-head-promos"></div>
+    <div id="results-promotions"></div>
+  </section>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const state = { center: { lat: 42.6977, lng: 23.3219 }, radius: 1, basket: ['cat:bread'], favorites: [] };
+
+// ---------- Theme ----------
+const THEME_KEY = 'kolichka.theme';
+function applyTheme(mode) {
+  document.body.classList.toggle('light', mode === 'light');
+  const btn = $('theme-toggle');
+  if (btn) btn.setAttribute('aria-checked', mode === 'light' ? 'true' : 'false');
+}
+applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+$('theme-toggle').addEventListener('click', () => {
+  const next = document.body.classList.contains('light') ? 'dark' : 'light';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+});
+
+// ---------- Release Notes Banner ----------
+(function() {
+  const KEY = 'kolichka.lastRelease';
+  const FIRST_VISIT_KEY = 'kolichka.firstVisit';
+  const FRESH_WINDOW_HOURS = 24;          // banner is "news" for 24h after release
+  // banner lives in the footer now → look it up after fetch resolves (the IIFE runs
+  // before the footer is parsed, so a top-level lookup would be null).
+
+  // Record first-ever visit so we can suppress banners for genuinely new users.
+  // (They haven't "missed" anything — the changelog is irrelevant to them.)
+  let firstVisit = parseInt(localStorage.getItem(FIRST_VISIT_KEY) || '0', 10);
+  if (!firstVisit) {
+    firstVisit = Date.now();
+    try { localStorage.setItem(FIRST_VISIT_KEY, String(firstVisit)); } catch (_) {}
+  }
+
+  fetch('/releases.json?_=' + Date.now(), { cache: 'no-store' })
+    .then(r => { if (!r.ok) throw 0; return r.json(); })
+    .then(data => {
+      const versions = data.versions || [];
+      if (!versions.length) return;
+      const banner = document.getElementById('release-banner');
+      if (!banner) return;
+      // Grab the latest (first entry)
+      const latest = versions[0];
+
+      // 1) Dismissed by this user already? Don't show again.
+      const seen = localStorage.getItem(KEY);
+      if (seen === latest.version) { banner.hidden = true; return; }
+
+      // 2) Auto-expire: only show within FRESH_WINDOW_HOURS of release date.
+      //    After that the banner is stale — most regular users have seen it,
+      //    and showing it indefinitely confuses new visitors.
+      const releaseTs = Date.parse((latest.date || '') + 'T00:00:00Z');
+      if (!Number.isFinite(releaseTs)) return;
+      const hoursOld = (Date.now() - releaseTs) / 3600000;
+      if (hoursOld > FRESH_WINDOW_HOURS) { banner.hidden = true; return; }
+
+      // Note: previously suppressed for first-time visitors whose firstVisit was
+      // after releaseTs. Removed — that hid the banner from MOST people on
+      // release day (everyone visiting in the first 24h has firstVisit > 00:00 UTC).
+      // The 24-hour auto-expire above is enough; new visitors briefly seeing
+      // "what's new" is a positive signal (active product).
+
+      // Within the 24h fresh window → show a small button at the BOTTOM (not the
+      // full banner). Notes appear only when the button is clicked.
+      const link = document.getElementById('rb-discord');
+      if (latest.discord_url) { link.href = latest.discord_url; } else { link.style.display = 'none'; }
+      const relBtn = document.getElementById('rel-btn');
+      if (relBtn) {
+        relBtn.textContent = '🆕 Какво е новото в ' + latest.version;
+        relBtn.hidden = false;
+        relBtn.addEventListener('click', () => {
+          document.getElementById('rb-title').textContent = '🎉 Какво е ново в ' + latest.version;
+          document.getElementById('rb-changes').innerHTML = (latest.changes || []).map(c => '<li>' + c + '</li>').join('');
+          banner.classList.toggle('visible');
+        });
+      }
+      // Close button — dismiss and remember (hides button + notes)
+      document.getElementById('rb-close').addEventListener('click', () => {
+        banner.classList.remove('visible');
+        if (relBtn) relBtn.hidden = true;
+        try { localStorage.setItem(KEY, latest.version); } catch (_) {}
+      });
+    })
+    .catch(() => { /* releases.json missing or failed — silently hide */ });
+})();
+
+// ---------- Map ----------
+// Generation token: incremented whenever state.center or state.radius changes.
+// Every async map/search call snapshots the token at entry and bails if a
+// newer call has superseded it. Prevents stale Sofia results from layering
+// over the user's actual location once geolocation resolves.
+let locationGen = 0;
+function bumpLocation() { return ++locationGen; }
+function isStale(gen) { return gen !== locationGen; }
+
+function getCSS(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+// Stable colour per chain. Known brand chains keep their canonical colour; the
+// rest get an HSL hue derived from a string hash, restricted to the 50–320°
+// range so we never land in the red/pink zone (reserved for the user-position
+// marker). Same input → same colour across reloads.
+const KNOWN_CHAIN_COLOR = {
+  kaufland:    '#2c7be5',  // brand blue
+  lidl:        '#f0b46a',  // brand orange
+  fantastico1: '#5dd3a8',  // green
+  fantastico2: '#5dd3a8',
+  billa:       '#d6a32a',  // mustard
+  kam:         '#6b46c1',  // purple
+  metro:       '#0ea5e9',  // cyan
+  tmarket:     '#7c3aed',  // violet
+  // pharmacies — bright green so they stand out on map tiles (dark & light)
+  apteki_remedium_0471: '#22c55e',
+  remedium_3306:        '#22c55e',
+};
+function chainColor(slug) {
+  if (KNOWN_CHAIN_COLOR[slug]) return KNOWN_CHAIN_COLOR[slug];
+  let h = 0;
+  for (let i = 0; i < slug.length; i++) h = ((h << 5) - h + slug.charCodeAt(i)) | 0;
+  const hue = 50 + (Math.abs(h) % 270);  // 50–320, skips red
+  return `hsl(${hue}, 65%, 42%)`;
+}
+function prettyChainName(name) {
+  // 'Фантастико (Груп ООД)' → 'Фантастико' for the legend chip.
+  return (name || '').replace(/\s*\([^)]*\)\s*/g, '').trim() || name || '';
+}
+
+// Guard: if Leaflet failed to load (e.g. blocked by ad-blocker / DNS filter),
+// show a visible error in the map area but let the rest of the app work.
+let map = null;
+if (typeof L === 'undefined') {
+  console.error('[kolichka] Leaflet did not load — CDN may be blocked.');
+  const errBox = document.createElement('div');
+  errBox.style.cssText = 'text-align:center;padding:40px 20px;color:#f0b46a;font-size:15px;min-height:300px;display:flex;align-items:center;justify-content:center;';
+  errBox.innerHTML = '⚠️ Картата не може да се зареди.<br>Проверете дали ad-blocker или DNS филтър блокира <code>unpkg.com</code>.<br><small>Търсенето и сравнението на цени работят нормално.</small>';
+  const mapEl = document.getElementById('map');
+  if (mapEl) mapEl.parentNode.replaceChild(errBox, mapEl);
+} else {
+  map = L.map('map', { zoomControl: true, tap: true, attributionControl: false })
+    .setView([state.center.lat, state.center.lng], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+  L.control.attribution({ prefix: false }).addAttribution('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors').addTo(map);
+}
+
+let centerMarker = null, radiusCircle = null, storeMarkers = [], accuracyCircle = null;
+function dotIcon(color) {
+  // Size adapts to zoom so markers are always visible (14px at z15 → 26px at z19)
+  const z = map.getZoom();
+  const size = Math.max(14, Math.min(28, 10 + z * 1.2));
+  return L.divIcon({ className: 'storedot', html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.3)"></div>`, iconSize: [size, size], iconAnchor: [size/2, size/2] });
+}
+function centerIcon(color) {
+  // Crosshair + ring so store dots underneath are never occluded
+  return L.divIcon({ className: 'storedot', html: `<div style="width:20px;height:20px;border-radius:50%;background:${color}33;border:2.5px solid ${color};box-shadow:0 1px 6px rgba(0,0,0,.4)"></div>`, iconSize: [20, 20], iconAnchor: [10, 10] });
+}
+function clearStoreLayer() { if (!map) return; for (const m of storeMarkers) map.removeLayer(m); storeMarkers = []; }
+
+async function refreshMap() {
+  if (!map) return;
+  const { lat, lng } = state.center;
+  const r = state.radius;
+  const myGen = locationGen;
+  if (centerMarker) map.removeLayer(centerMarker);
+  if (radiusCircle) map.removeLayer(radiusCircle);
+  clearStoreLayer();
+  centerMarker = L.marker([lat, lng], { icon: centerIcon(getCSS('--pink')), zIndexOffset: 1000, draggable: true }).addTo(map).bindPopup('Твоята позиция<br><small>Влачи ме или натисни картата</small>');
+  centerMarker.on('dragend', e => { const ll = e.target.getLatLng(); setCenter(ll.lat, ll.lng); });
+  radiusCircle = L.circle([lat, lng], { radius: r * 1000, color: getCSS('--accent'), weight: 1, fillOpacity: 0.06 }).addTo(map);
+  try {
+    const res = await fetch(`/api/stores/nearby?lat=${lat}&lng=${lng}&radius_km=${r}`).then(r => r.json());
+    // A newer setCenter() has already started a fresh refreshMap — drop these
+    // stale markers on the floor so they don't pile up on top of the new ones.
+    if (isStale(myGen)) return;
+    $('map-counter').textContent = `· ${res.count} ${res.count===1?'магазин':'магазина'} в ${r} км`;
+    // Track distinct chains in this radius so the legend can show only them.
+    const chainsInView = new Map(); // slug -> { name, color, count }
+    for (const s of res.stores) {
+      const color = chainColor(s.chain_slug);
+      const m = L.marker([s.lat, s.lng], { icon: dotIcon(color), zIndexOffset: 2000 }).addTo(map);
+      m._color = color;
+      const safeChain = String(s.chain_name||'').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+      const safeAddr  = String(s.address||'').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+      m.bindPopup(
+        `<div class="map-popup"><b>${safeChain}</b><div class="addr">${safeAddr}</div>` +
+        `<div class="dist">на ${(s.dist_m/1000).toFixed(2)} км</div></div>`
+      );
+      storeMarkers.push(m);
+      // Dedupe legend rows by pretty display name so 'fantastico1' and
+      // 'fantastico2' (different legal entities, same brand) collapse into
+      // one chip rather than two.
+      const displayName = prettyChainName(s.chain_name);
+      const entry = chainsInView.get(displayName);
+      if (entry) entry.count++;
+      else chainsInView.set(displayName, { name: displayName, color, count: 1 });
+    }
+    // Rebuild the legend: chains present (sorted by count desc, then name) +
+    // a fixed entry for the user-position marker.
+    const legend = document.getElementById('legend');
+    const sorted = Array.from(chainsInView.values()).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'bg'));
+    const chips = sorted.map(c => `<span><span class="dot" style="background:${c.color}"></span>${c.name}${c.count > 1 ? ` <span style="opacity:0.6">×${c.count}</span>` : ''}</span>`).join('');
+    legend.innerHTML = chips +
+      `<span><span class="dot" style="background:${getCSS('--pink')}"></span>Твоята позиция</span>` +
+      `<span id="map-counter">· ${res.count} ${res.count===1?'магазин':'магазина'} в ${r} км</span>`;
+    if (res.count > 0) map.fitBounds(radiusCircle.getBounds(), { padding: [20,20], maxZoom: 15, animate: false });
+    else map.setView([lat, lng], 14);
+  } catch (e) { console.warn('map error', e); }
+}
+function setCenter(lat, lng) { state.center.lat = lat; state.center.lng = lng; bumpLocation(); refreshMap(); rerunCurrentTab(); }
+if (map) {
+  map.on('click', e => setCenter(e.latlng.lat, e.latlng.lng));
+  // Resize markers on zoom so they stay visible at every level
+  map.on('zoomend', () => { for (const m of storeMarkers) if (m._color) m.setIcon(dotIcon(m._color)); });
+}
+
+// ---------- Radius ----------
+$('radius').addEventListener('input', e => { state.radius = parseFloat(e.target.value); $('radius-val').textContent = state.radius.toFixed(1) + ' км'; });
+$('radius').addEventListener('change', () => { bumpLocation(); refreshMap(); rerunCurrentTab(); });
+
+// ---------- Geolocation ----------
+function showAccuracy(lat, lng, accuracyM) {
+  if (accuracyCircle) map.removeLayer(accuracyCircle);
+  accuracyCircle = L.circle([lat, lng], { radius: accuracyM, color: '#ff5d8f', weight: 1, dashArray: '4,4', fillOpacity: 0.05 }).addTo(map);
+  let msg;
+  if (accuracyM <= 100)        msg = `Локация ±${Math.round(accuracyM)} м (точно)`;
+  else if (accuracyM <= 1000)  msg = `Локация ±${Math.round(accuracyM)} м — уточнявам…`;
+  else                         msg = `Локация ±${(accuracyM/1000).toFixed(1)} км — само Wi-Fi/IP. Напиши адрес.`;
+  $('geo-status').textContent = msg;
+  $('geo-status').style.color = accuracyM > 1000 ? 'var(--warn)' : 'var(--muted)';
+}
+let geoWatchId = null;
+function stopGeoWatch() { if (geoWatchId !== null) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; } }
+function locateMe() {
+  if (!navigator.geolocation) { $('geo-status').textContent = 'Браузърът не поддържа локация'; return; }
+  $('geo-status').textContent = 'Намирам локацията ти…';
+  stopGeoWatch();
+  let best = Infinity;
+  let lastCenteredLat = null, lastCenteredLng = null;
+  geoWatchId = navigator.geolocation.watchPosition(
+    pos => {
+      const a = pos.coords.accuracy;
+      if (a >= best) return;                      // ignore worse readings
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      const accGain = best - a;
+      best = a;
+      showAccuracy(lat, lng, a);
+      // Only re-center (which re-fetches + re-renders the list) on meaningful change:
+      // first fix, ≥25 m movement, or a coarse→fine accuracy jump >100 m.
+      let moved = Infinity;
+      if (lastCenteredLat !== null) {
+        const dLat = (lat - lastCenteredLat) * 111000;
+        const dLng = (lng - lastCenteredLng) * 111000 * Math.cos(lat * Math.PI / 180);
+        moved = Math.hypot(dLat, dLng);
+      }
+      if (moved > 25 || accGain > 100) {
+        lastCenteredLat = lat; lastCenteredLng = lng;
+        setCenter(lat, lng);
+      }
+    },
+    err => { $('geo-status').textContent = 'Локацията е отказана: ' + err.message; $('geo-status').style.color = 'var(--warn)'; stopGeoWatch(); },
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 2000 }
+  );
+  setTimeout(stopGeoWatch, 12000);
+}
+$('use-location').addEventListener('click', locateMe);
+
+// ---------- Address search ----------
+let addrTimer = null;
+$('addr-input').addEventListener('input', () => {
+  clearTimeout(addrTimer);
+  const q = $('addr-input').value.trim();
+  if (q.length < 3) { $('addr-suggest').style.display = 'none'; return; }
+  addrTimer = setTimeout(async () => {
+    const list = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`).then(r => r.json());
+    if (!Array.isArray(list) || list.length === 0) { $('addr-suggest').style.display = 'none'; return; }
+    $('addr-suggest').innerHTML = list.map((x, i) => `<div data-lat="${x.lat}" data-lng="${x.lng}">${x.display}</div>`).join('');
+    $('addr-suggest').style.display = 'block';
+    $('addr-suggest').querySelectorAll('div').forEach(d => {
+      d.addEventListener('click', () => {
+        setCenter(parseFloat(d.dataset.lat), parseFloat(d.dataset.lng));
+        if (accuracyCircle) { map.removeLayer(accuracyCircle); accuracyCircle = null; }
+        $('geo-status').textContent = `Адрес: ${d.textContent.slice(0, 70)}`;
+        $('geo-status').style.color = 'var(--muted)';
+        $('addr-suggest').style.display = 'none';
+        $('addr-input').value = '';
+      });
+    });
+  }, 350);
+});
+async function searchAddressAndCenter() {
+  const q = $('addr-input').value.trim();
+  if (q.length < 2) { $('addr-input').focus(); return; }
+  const first = $('addr-suggest').querySelector('div');
+  if (first) { first.click(); return; }
+  try {
+    const list = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`).then(r => r.json());
+    if (Array.isArray(list) && list[0]) {
+      setCenter(parseFloat(list[0].lat), parseFloat(list[0].lng));
+      if (accuracyCircle) { map.removeLayer(accuracyCircle); accuracyCircle = null; }
+      $('geo-status').textContent = `Адрес: ${list[0].display.slice(0, 70)}`;
+      $('geo-status').style.color = 'var(--muted)';
+      $('addr-input').value = '';
+    } else {
+      $('geo-status').textContent = `Адресът не е намерен: ${q}`;
+      $('geo-status').style.color = 'var(--warn)';
+    }
+  } catch (e) {
+    $('geo-status').textContent = 'Грешка при намиране на адрес';
+    $('geo-status').style.color = 'var(--warn)';
+  }
+}
+$('addr-go').addEventListener('click', searchAddressAndCenter);
+$('addr-input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); searchAddressAndCenter(); } if (e.key === 'Escape') $('addr-suggest').style.display = 'none'; });
+document.addEventListener('click', e => { if (!e.target.closest('#addr-input') && !e.target.closest('#addr-suggest')) $('addr-suggest').style.display = 'none'; });
+
+refreshMap().then(() => rerunCurrentTab());
+locateMe();
+
+// ---------- Tabs ----------
+let currentTab = 'single';
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+    currentTab = t.dataset.tab;
+    $('tab-single').hidden = currentTab !== 'single';
+    $('tab-basket').hidden = currentTab !== 'basket';
+    $('tab-promotions').hidden = currentTab !== 'promotions';
+    rerunCurrentTab();
+  });
+});
+function rerunCurrentTab() {
+  if (currentTab === 'single') renderSingle();
+  else if (currentTab === 'basket') renderBasket();
+  else if (currentTab === 'promotions') renderPromotions();
+}
+
+// ---------- Stats (small, top of page, above category chips) ----------
+function fmtNumber(n) { return Number(n).toLocaleString('bg-BG'); }
+async function loadStats() {
+  const r = await fetch('/api/stats').then(r => r.json());
+  // Compact line: prefer "fresh" counts (active in last 2 days) over raw totals
+  // so the user sees what's currently usable, not what's been in the DB forever.
+  const places   = fmtNumber(r.fresh_settlements || r.settlements || 0);
+  const chains   = fmtNumber(r.fresh_chains   || r.chains);
+  const stores   = fmtNumber(r.fresh_stores   || r.geocoded_stores);
+  const products = fmtNumber(r.fresh_products || r.canonicals);
+  $('stats').textContent = `${places} населени места · ${chains} вериги · ${stores} магазина · ${products} артикула`;
+}
+loadStats();
+
+// ---------- Categories ----------
+let CATEGORIES = [];
+
+// Client-side grouping of the category chips into scannable sections. Slugs map
+// to a group; anything not listed (e.g. a category added later via the admin UI)
+// falls into "Други" so nothing silently disappears.
+const CAT_GROUPS = [
+  { label: 'Основни и варива', emoji: '🍞', slugs: ['bread','flour','rice','pasta','legumes'] },
+  { label: 'Мляко и яйца',     emoji: '🥛', slugs: ['milk','yogurt','cheese-white','cheese-yellow','butter','eggs'] },
+  { label: 'Месо и риба',      emoji: '🥩', slugs: ['meat','ground-meat','cold-cuts','chicken','pork','beef','fish'] },
+  { label: 'Зеленчуци',        emoji: '🥬', slugs: ['potato','tomato','cucumber','onion','cabbage','carrot','olives'] },
+  { label: 'Плодове',          emoji: '🍎', slugs: ['apple','banana','lemon','orange'] },
+  { label: 'Сладко',           emoji: '🍫', slugs: ['chocolate','sugar','biscuits'] },
+  { label: 'Олио и мазнини',   emoji: '🫒', slugs: ['oil-sunflower','olive-oil'] },
+  { label: 'Напитки',          emoji: '🥤', slugs: ['water','coffee','tea'] },
+  { label: 'Алкохол',          emoji: '🍷', slugs: ['beer','wine','spirits'] },
+  { label: 'Дом и хигиена',    emoji: '🧼', slugs: ['toilet-paper','wet-wipes','dishwash','home-clean'] },
+];
+
+// Reusable two-level category selector used by all three tabs (single / basket /
+// promos). Level 1 = group chips; clicking a group reveals that group's article
+// chips in the sub-row (and optionally runs onGroupOpen). Clicking an article
+// runs onArticle. An optional search box flattens to matching article chips
+// across all groups.
+//
+// opts:
+//   gridId      — container for the level-1 group chips
+//   subId       — container for the level-2 article chips
+//   searchId    — optional text input that filters to matching articles
+//   selectMode  — 'single' (one active chip) | 'multi' (toggle, reflects isSelected) | 'none'
+//   isSelected(slug) — for multi mode, whether a slug is currently selected
+//   onArticle(cat, chipEl) — click handler for an article chip
+//   onGroupOpen(group, cats, subEl) — runs after a group's articles are revealed
+function setupTwoLevelCats(opts) {
+  const groupsEl = $(opts.gridId);
+  const subEl = $(opts.subId);
+  const searchEl = opts.searchId ? $(opts.searchId) : null;
+  if (!groupsEl || !subEl) return;
+  const bySlug = new Map(CATEGORIES.map(c => [c.slug, c]));
+
+  groupsEl.innerHTML = CAT_GROUPS.map((g, i) =>
+    `<button type="button" class="cat-group-chip" data-group="${i}">${g.emoji} ${_escHtml(g.label)}</button>`
+  ).join('');
+
+  function articleHtml(c) {
+    const active = (opts.selectMode === 'multi' && opts.isSelected && opts.isSelected(c.slug)) ? ' active' : '';
+    const search = _escHtml((c.label + ' ' + (c.aliases || []).join(' ')).toLowerCase());
+    return `<button type="button" class="cat-chip${active}" data-slug="${_escHtml(c.slug)}" data-label="${_escHtml(c.label)}" data-search="${search}">${c.emoji || ''} ${_escHtml(c.label)}</button>`;
+  }
+
+  function wireChips() {
+    subEl.querySelectorAll('.cat-chip').forEach(b => {
+      b.addEventListener('click', () => {
+        const cat = bySlug.get(b.dataset.slug);
+        if (!cat) return;
+        if (opts.selectMode === 'single') {
+          subEl.querySelectorAll('.cat-chip').forEach(x => x.classList.toggle('active', x === b));
+        }
+        opts.onArticle(cat, b);
+        if (opts.selectMode === 'multi' && opts.isSelected) {
+          b.classList.toggle('active', opts.isSelected(cat.slug));
+        }
+      });
+    });
+  }
+
+  function showArticles(group, withHint) {
+    const cats = group.slugs.map(s => bySlug.get(s)).filter(Boolean);
+    subEl.innerHTML = (withHint ? `<div class="cat-sub-hint">Избери продукт от „${group.emoji} ${_escHtml(group.label)}":</div>` : '')
+      + cats.map(articleHtml).join('');
+    wireChips();
+    return cats;
+  }
+
+  groupsEl.querySelectorAll('.cat-group-chip').forEach(b => {
+    b.addEventListener('click', () => {
+      const g = CAT_GROUPS[+b.dataset.group];
+      groupsEl.querySelectorAll('.cat-group-chip').forEach(x => x.classList.toggle('active', x === b));
+      const cats = showArticles(g, true);
+      if (opts.onGroupOpen) opts.onGroupOpen(g, cats, subEl);
+      track('group-opened', { group: g.label, tab: opts.gridId });
+    });
+  });
+
+  if (searchEl) {
+    searchEl.addEventListener('input', () => {
+      const q = searchEl.value.trim().toLowerCase();
+      if (!q) {
+        groupsEl.style.display = '';
+        groupsEl.querySelectorAll('.cat-group-chip').forEach(x => x.classList.remove('active'));
+        subEl.innerHTML = '';
+        return;
+      }
+      groupsEl.style.display = 'none';
+      const matches = CATEGORIES.filter(c => (c.label + ' ' + (c.aliases || []).join(' ')).toLowerCase().includes(q));
+      subEl.innerHTML = matches.length ? matches.map(articleHtml).join('')
+        : `<div class="cat-sub-hint">Няма категория „${_escHtml(q)}"</div>`;
+      wireChips();
+    });
+  }
+
+  // expose a re-render of the current sub-row so external "clear" actions can
+  // refresh active states (used by promos' clear-filters button).
+  return { refreshSub: () => subEl.querySelectorAll('.cat-chip').forEach(b => {
+    if (opts.selectMode === 'multi' && opts.isSelected) b.classList.toggle('active', opts.isSelected(b.dataset.slug));
+  }) };
+}
+
+let _promoCats = null;  // controller handle for the promos grid (clear button)
+let _compareCtrl = null;  // AbortController for the in-flight /api/compare request
+
+async function loadCategories() {
+  CATEGORIES = await fetch('/api/categories').then(r => r.json());
+
+  // SINGLE — pick first article of a group instantly, narrow by tapping another.
+  setupTwoLevelCats({
+    gridId: 'cat-grid-single', subId: 'cat-sub-single', searchId: null,
+    selectMode: 'single',
+    onArticle: (cat) => { $('q').value = cat.label.toLowerCase(); renderSingle(); },
+    onGroupOpen: (group, cats, subEl) => {
+      if (!cats.length) return;
+      const first = subEl.querySelector('.cat-chip');
+      if (first) first.classList.add('active');
+      $('q').value = cats[0].label.toLowerCase();
+      renderSingle();
+    },
+  });
+
+  // BASKET — group reveals articles; tapping an article adds it to the list.
+  setupTwoLevelCats({
+    gridId: 'cat-grid-basket', subId: 'cat-sub-basket', searchId: null,
+    selectMode: 'none',
+    onArticle: (cat, chip) => {
+      const tag = 'cat:' + cat.slug;
+      if (!state.basket.includes(tag)) { state.basket.push(tag); saveBasket(); renderBasketItems(); }
+      chip.classList.add('added');
+      setTimeout(() => chip.classList.remove('added'), 700);
+    },
+  });
+
+  // PROMOS — multi-select; tapping an article toggles it into the promo filter.
+  _promoCats = setupTwoLevelCats({
+    gridId: 'cat-grid-promos', subId: 'cat-sub-promos', searchId: null,
+    selectMode: 'multi',
+    isSelected: (slug) => promoCatsSelected.has(slug),
+    onArticle: (cat) => {
+      const s = cat.slug;
+      if (promoCatsSelected.has(s)) promoCatsSelected.delete(s); else promoCatsSelected.add(s);
+      renderPromotions();
+    },
+  });
+}
+// HTML-escape — applied to all free-text basket items before they hit innerHTML,
+// since a malicious shared link could otherwise smuggle a <script> tag in via
+// the ?b=... query.
+function _escHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+function prettyItem(item) {
+  if (item.startsWith('cat:')) {
+    const slug = item.slice(4);
+    const c = CATEGORIES.find(x => x.slug === slug);
+    // Fall back to the bare slug (never the raw "cat:…") if the category list
+    // isn't loaded yet or the slug is unknown — keeps the chip readable.
+    return c ? `${c.emoji || ''} ${_escHtml(c.label)}`.trim() : _escHtml(slug);
+  }
+  // Strip the legacy "q:" prefix if present, then escape for innerHTML safety.
+  const raw = item.startsWith('q:') ? item.slice(2) : item;
+  return _escHtml(raw);
+}
+
+// ---------- Helpers ----------
+function snapshotBadge(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `<span class="snap-badge" title="Цена обновена ${dd}/${mm}/${yyyy}">${dd}/${mm}</span>`;
+}
+
+function staleBadge(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `<span class="stale-badge" title="Последна налична цена от ${dd}/${mm}, продуктът не е в днешния обяв">от ${dd}/${mm}</span>`;
+}
+
+function chip(c, isBest, isWorst) {
+  const cls = isBest ? 'chip best' : isWorst ? 'chip worst' : 'chip';
+  const onPromo = c.price_retail && c.price_retail > c.min_price;
+  const pct = onPromo ? Math.round(100 - 100 * c.min_price / c.price_retail) : 0;
+  const retailLine = onPromo ? `<div class="meta"><span style="text-decoration:line-through">${c.price_retail.toFixed(2)} €</span> <span class="promo-pct">−${pct}%</span></div>` : '';
+  return `<div class="${cls}"><div class="slug">${c.chain_name}</div><div class="price">${c.min_price.toFixed(2)} <span style="font-size:12px;color:#8b94a3">€</span></div>${retailLine}<div class="meta">в ${c.n_stores} ${c.n_stores>1?'магазина':'магазин'} ${snapshotBadge(c.snapshot_date)}</div></div>`;
+}
+
+// ---------- Single ----------
+async function renderSingle() {
+  const q = $('q').value.trim();
+  const headEl = $('results-head-single');
+  if (!q) { $('results-single').innerHTML = ''; if (headEl) headEl.textContent = ''; return; }
+  if (headEl) headEl.textContent = 'Резултати';
+  // Cancel any compare still in flight: rapid category taps must not pile up
+  // concurrent heavy queries on the server, and a slower earlier request must
+  // not overwrite the result of the one the user actually wants.
+  if (_compareCtrl) _compareCtrl.abort();
+  _compareCtrl = new AbortController();
+  const signal = _compareCtrl.signal;
+  $('results-single').innerHTML = '<div class="empty">Търся…</div>';
+  const { lat, lng } = state.center;
+  const myGen = locationGen;
+  const url = `/api/compare?q=${encodeURIComponent(q)}&lat=${lat}&lng=${lng}&radius_km=${state.radius}&min_chains=1`;
+  let r;
+  try {
+    r = await fetch(url, { signal }).then(r => r.json());
+  } catch (e) {
+    if (e.name === 'AbortError') return;  // superseded by a newer search
+    $('results-single').innerHTML = '<div class="empty">Грешка при търсене. Опитай пак.</div>';
+    return;
+  }
+  if (signal.aborted || isStale(myGen)) return;  // superseded, or user moved
+  const hasCanonical = r.matches && r.matches.length > 0;
+  const hasLoose = r.loose && r.loose.length > 0;
+  const catBadge = r.category ? `<div style="margin:6px 0 10px"><span class="category-badge">${r.category.emoji || ''} ${r.category.label}</span><span class="sub" style="margin-left:6px">разпозната категория</span></div>` : '';
+
+  if (!hasCanonical && !hasLoose) {
+    $('results-single').innerHTML = catBadge + `<div class="empty">Няма съвпадения в ${state.radius} км. Търся най-близкия магазин…</div>`;
+    fetch(`/api/nearest?q=${encodeURIComponent(q)}&lat=${state.center.lat}&lng=${state.center.lng}`, { signal })
+      .then(r => r.json())
+      .then(nr => {
+        if (signal.aborted) return;  // superseded by a newer search
+        if (!nr.nearest) {
+          // No match ANYWHERE in BG — give the user something to do
+          $('results-single').innerHTML = catBadge + `<div class="empty">
+            <div style="font-size:24px;margin-bottom:6px">🔍</div>
+            <div style="font-weight:600;margin-bottom:8px">Не намерих „${q}"</div>
+            <div style="color:var(--muted);font-size:12px;line-height:1.5">
+              Възможни причини:<br>
+              • Този продукт не се продава в наблюдаваните вериги<br>
+              • Името се пише различно (напр. „краве масло" вместо „масло")<br>
+              • Опитай <button class="primary" type="button" id="empty-promotions-btn" style="display:inline;padding:2px 8px;font-size:11px">да видиш всички промоции</button>
+            </div>
+          </div>`;
+          const pb = $('empty-promotions-btn');
+          if (pb) pb.addEventListener('click', () => { currentTab = 'promotions'; document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'promotions')); renderPromotions(); });
+          return;
+        }
+        const km = parseFloat(nr.nearest.dist_km);
+        const suggested = Math.min(25, Math.ceil(km + 0.5));
+        let widenBtnHtml = '';
+        if (suggested > state.radius) {
+          widenBtnHtml = `<button class="primary" id="widen-btn" type="button" style="margin-left:8px">Разшири на ${suggested} км</button>`;
+        } else if (km > 25) {
+          // Already at max radius but store is further — tell user honestly
+          widenBtnHtml = `<span class="sub" style="margin-left:8px;color:var(--warn)">Най-близкият магазин е извън обхвата (>25 км)</span>`;
+        }
+        $('results-single').innerHTML = catBadge + `<div class="empty">Няма съвпадения в ${state.radius} км. Най-близко: <b>${nr.nearest.chain_name}</b> на <b>${km} км</b> (${parseFloat(nr.nearest.price_best).toFixed(2)} €). ${widenBtnHtml}</div>`;
+        const wb = $('widen-btn'); if (wb) wb.addEventListener('click', () => { state.radius = suggested; $('radius').value = suggested; $('radius-val').textContent = suggested.toFixed(1) + ' км'; refreshMap(); renderSingle(); });
+      })
+      .catch((e) => {
+        if (e && e.name === 'AbortError') return;  // superseded by a newer search
+        // Network error / API error — still give the user something to do
+        $('results-single').innerHTML = catBadge + `<div class="empty">
+          <div style="font-size:24px;margin-bottom:6px">🌐</div>
+          <div style="font-weight:600;margin-bottom:8px">Не успяхме да се свържем</div>
+          <div style="color:var(--muted);font-size:12px">
+            Опитай след малко или <button class="primary" type="button" onclick="location.reload()" style="display:inline;padding:2px 8px;font-size:11px">презареди страницата</button>
+          </div>
+        </div>`;
+      });
+    return;
+  }
+
+  const resLimit = parseInt($('reslimit').value || '5', 10);
+  r.matches = (r.matches || []).slice(0, resLimit);
+  if (r.loose) r.loose = r.loose.slice(0, resLimit);
+
+  function looseSection() {
+    if (!hasLoose) return '';
+    const minP = Math.min(...r.loose.map(l => l.price));
+    const maxP = Math.max(...r.loose.map(l => l.price));
+    const spread = minP > 0 ? Math.round((maxP / minP - 1) * 100) : 0;
+    const chips = r.loose.map(l => {
+      const onPromo = l.price_retail && l.price_retail > l.price;
+      const pct = onPromo ? Math.round(100 - 100 * l.price / l.price_retail) : 0;
+      const retailLine = onPromo ? `<div class="meta"><span style="text-decoration:line-through">${l.price_retail.toFixed(2)} €</span> <span class="promo-pct">−${pct}%</span></div>` : '';
+      return `<div class="chip ${l.price === minP ? 'best' : (l.price === maxP && minP !== maxP ? 'worst' : '')}"><button class="fav-item-btn chip-fav" type="button" data-fav="${_escHtml(l.raw_name)}" title="Запази в любими" aria-label="Запази в любими">♡</button><div class="slug">${l.chain_name}</div><div class="price">${l.price.toFixed(2)} <span style="font-size:12px;color:#8b94a3">€</span></div>${retailLine}<div class="meta" title="${l.raw_name}">${l.raw_name.length > 32 ? l.raw_name.slice(0,30)+'…' : l.raw_name}${l.qty ? ` · ${l.qty.value}${l.qty.unit}` : ''} ${snapshotBadge(l.snapshot_date)}</div></div>`;
+    }).join('');
+    return `<div class="card" style="border-style:dashed"><h3>Най-евтиното „${r.query}" по верига</h3><div class="meta">${r.loose.length} ${r.loose.length>1?'вериги':'верига'} · най-евтино <b>${minP.toFixed(2)} €</b>${minP !== maxP ? ` · <span class="spread">+${spread}%</span> срещу ${maxP.toFixed(2)} €` : ''}<br><small>⚠ Различни продукти във всяка верига.</small></div><div class="pricegrid" style="margin-top:6px">${chips}</div></div>`;
+  }
+
+  if (!hasCanonical) { $('results-single').innerHTML = catBadge + looseSection(); wireFavItemBtns($('results-single')); return; }
+
+  const html = catBadge + r.matches.map(m => {
+    const minP = m.spread.min, maxP = m.spread.max;
+    const chips = m.chains.map(c => chip(c, c.min_price === minP, c.min_price === maxP && minP !== maxP)).join('');
+    return `<div class="card" data-cid="${m.canonical_id}"><div class="card-head"><h3>${m.display}</h3><button class="fav-item-btn" type="button" data-fav="${_escHtml(m.display)}" title="Запази в любими" aria-label="Запази в любими">♡</button></div><div class="meta">${m.n_chains} ${m.n_chains>1?'вериги':'верига'} · най-евтино <b>${minP.toFixed(2)} €</b> в ${m.cheapest.chain_name}${minP!==maxP?` · <span class="spread">+${m.spread.pct}%</span> срещу ${maxP.toFixed(2)} €`:''}</div><div class="pricegrid" style="margin-top:6px">${chips}</div><details><summary>По магазини</summary><div id="stores-${m.canonical_id}">Зареждам…</div></details></div>`;
+  }).join('') + looseSection();
+  $('results-single').innerHTML = html;
+  wireFavItemBtns($('results-single'));
+
+  // Scope strictly to the per-canonical details inside results-single, so the
+  // feedback widget's "Технически данни" details (or any other <details> on the
+  // page) doesn't get this handler attached and crash on closest('.card').
+  document.querySelectorAll('#results-single .card[data-cid] details').forEach(d => {
+    d.addEventListener('toggle', async () => {
+      if (!d.open) return;
+      const card = d.closest('.card');
+      if (!card || !card.dataset.cid) return;
+      const cid = card.dataset.cid;
+      const target = document.getElementById(`stores-${cid}`);
+      if (target.dataset.loaded) return;
+      const res = await fetch(`/api/canonical/${cid}?lat=${state.center.lat}&lng=${state.center.lng}&radius_km=${state.radius}`).then(r => r.json());
+      target.innerHTML = res.stores.map(s => `<div class="store-row clickable-store" data-lat="${s.lat}" data-lng="${s.lng}"><span>${s.chain_name} — ${s.address}</span><span><b>${parseFloat(s.price_best).toFixed(2)} €</b> · ${(s.dist_m/1000).toFixed(2)} км ${snapshotBadge(s.snapshot_date)}</span></div>`).join('') || '<div class="empty">Няма магазини</div>';
+      target.dataset.loaded = '1';
+      target.querySelectorAll('.clickable-store').forEach(row => { row.addEventListener('click', () => { const la = parseFloat(row.dataset.lat), ln = parseFloat(row.dataset.lng); if (Number.isFinite(la)&&Number.isFinite(ln) && map) { map.flyTo([la, ln], 16, { duration: 0.5 }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }); });
+    });
+  });
+}
+$('go-single').addEventListener('click', async () => {
+  const q = $('q').value.trim();
+  track('search-compared', {
+    has_query: q.length > 0,
+    query_kind: q.startsWith('cat:') ? 'category' : 'text',
+    radius_km: state.radius,
+  });
+  await renderSingle();
+  if (window.innerWidth <= 640) {
+    document.getElementById('results-single')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+});
+$('q').addEventListener('keydown', e => { if (e.key === 'Enter') renderSingle(); });
+
+// ---------- Basket ----------
+// Persisted basket = single source of truth, mirrored in 3 places:
+//   1. localStorage (kolichka.basket) — survives reload, same browser
+//   2. URL query ?b=cat:bread,cat:milk — survives copy-paste / share
+//   3. state.basket (in-memory) — used by render functions
+//
+// Load priority: URL > localStorage > empty. Save: writes both URL + localStorage.
+// Sharing turns 1 user into N organically (spouse, family group, coworker) —
+// per the marketing audit, this is the lowest-effort viral mechanism for a
+// utility app with no auth.
+
+function _encodeBasketForUrl(items) {
+  // Items are short Cyrillic/Latin strings; URLSearchParams handles encoding.
+  return (items || []).join(',');
+}
+function _decodeBasketFromUrl(str) {
+  if (!str || typeof str !== 'string') return null;
+  const items = str.split(',').map(s => s.trim()).filter(s => s && s.length < 200);
+  // Sanity caps — abuse via a 10k-item URL would otherwise crash render.
+  if (items.length === 0 || items.length > 30) return null;
+  // Accept three shapes:
+  //   - "cat:slug"  — a known category chip (validated)
+  //   - "q:text"    — a free-text query, legacy q: prefix
+  //   - "text"      — a free-text query without prefix (what basket-add stored
+  //                   before this fix; e.g. "deutsche markenbutter")
+  // The previous filter `^(cat:|q:)` silently dropped free-text items on every
+  // reload because basket-add stored them as raw text — saveBasket then mirrored
+  // the now-shorter list back to localStorage, losing the item forever.
+  // No regex restriction on free-text content (the 200-char + 30-item caps above
+  // are enough to prevent abuse). XSS-safe rendering is enforced in prettyItem.
+  return items;
+}
+
+function saveBasket() {
+  try { localStorage.setItem('kolichka.basket', JSON.stringify(state.basket || [])); } catch (e) {}
+  // Mirror to URL so the current address bar is always a "live shareable link".
+  // history.replaceState avoids stacking back-button entries on every chip click.
+  try {
+    const u = new URL(location.href);
+    if (state.basket && state.basket.length > 0) {
+      u.searchParams.set('b', _encodeBasketForUrl(state.basket));
+    } else {
+      u.searchParams.delete('b');
+    }
+    history.replaceState(null, '', u.toString());
+  } catch (e) {}
+}
+
+function loadBasket() {
+  // URL wins — a shared link should always display exactly what the sender intended.
+  try {
+    const params = new URLSearchParams(location.search);
+    const fromUrl = _decodeBasketFromUrl(params.get('b'));
+    if (fromUrl && fromUrl.length > 0) {
+      state.basket = fromUrl;
+      try { sessionStorage.setItem('kolichka:shared-basket', '1'); } catch (_) {}
+      // Close the share loop: track inbound visits that arrived via a shared link.
+      // Delay a tick so the umami snippet has a chance to load before we fire.
+      setTimeout(() => track('share-link-opened', { items: fromUrl.length }), 600);
+      // Also persist to localStorage so refresh keeps the imported list.
+      try { localStorage.setItem('kolichka.basket', JSON.stringify(fromUrl)); } catch (_) {}
+      return;
+    }
+  } catch (e) {}
+  // Fall back to localStorage
+  try {
+    const raw = localStorage.getItem('kolichka.basket');
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) state.basket = arr.filter(x => typeof x === 'string');
+    }
+  } catch (e) {}
+}
+loadBasket();
+
+// Simple toast — used by share + future similar lightweight feedback.
+function showToast(text, isError) {
+  let t = document.getElementById('kolichka-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'kolichka-toast';
+    t.style.cssText = 'position:fixed;left:50%;top:24px;transform:translateX(-50%) translateY(-12px);background:#0f5d36;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9000;opacity:0;transition:opacity .2s ease, transform .2s ease;box-shadow:0 4px 16px rgba(0,0,0,.3);';
+    document.body.appendChild(t);
+  }
+  t.textContent = text;
+  t.style.background = isError ? '#a13a3a' : '#0f5d36';
+  requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)'; });
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(-12px)'; }, 2400);
+}
+
+// Fallback share modal — shown when neither navigator.share nor clipboard.writeText
+// can deliver. Renders a real input the user can copy from manually, plus a
+// "select all" tap target that works on every mobile keyboard. Replaces the
+// previous window.prompt() which was hostile on mobile (couldn't select text
+// from the dialog reliably, virtual keyboard fought the modal).
+function _showShareUrlModal(url) {
+  const existing = document.getElementById('share-url-modal');
+  if (existing) existing.remove();
+  const wrap = document.createElement('div');
+  wrap.id = 'share-url-modal';
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9100;';
+  wrap.innerHTML = `
+    <div style="background:#171b22;color:#e8ecf1;border:1px solid #262b34;border-radius:12px;padding:20px;max-width:480px;width:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,.6)">
+      <div style="font-size:16px;font-weight:600;margin-bottom:6px">📤 Сподели списъка</div>
+      <div style="color:#8b94a3;font-size:13px;margin-bottom:14px">Копирай линка по-долу и го прати на приятел.</div>
+      <input id="share-url-input" readonly value="${url.replace(/"/g, '&quot;')}"
+             style="width:100%;font-family:monospace;font-size:12px;padding:10px 12px;border:1px solid #262b34;background:#0d1117;color:#e8ecf1;border-radius:8px;box-sizing:border-box" />
+      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+        <button id="share-modal-cancel" style="padding:9px 18px;background:transparent;color:#8b94a3;border:1px solid #262b34;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">Затвори</button>
+        <button id="share-modal-copy"   style="padding:9px 18px;background:#0f5d36;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">📋 Копирай</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const input = wrap.querySelector('#share-url-input');
+  // Pre-select for one-tap copy on platforms where the button fails
+  setTimeout(() => { input.focus(); input.select(); input.setSelectionRange(0, url.length); }, 50);
+  const close = () => wrap.remove();
+  wrap.querySelector('#share-modal-cancel').addEventListener('click', close);
+  wrap.addEventListener('click', (e) => { if (e.target === wrap) close(); });
+  wrap.querySelector('#share-modal-copy').addEventListener('click', async () => {
+    let ok = false;
+    try { await navigator.clipboard.writeText(url); ok = true; }
+    catch (_) {
+      // Last-resort: execCommand path (deprecated but still works in old Android WebView)
+      input.focus(); input.select();
+      try { ok = document.execCommand('copy'); } catch (_) {}
+    }
+    if (ok) {
+      showToast('Линкът е копиран ✓');
+      track('basket-shared', { items: state.basket.length, method: 'modal-copy' });
+      close();
+    } else {
+      // The input stays selected; user can long-press → Copy on mobile
+      showToast('Маркирай и копирай ръчно', true);
+    }
+  });
+}
+
+async function shareBasket() {
+  if (!state.basket || state.basket.length === 0) {
+    showToast('Добави поне един продукт преди да споделиш', true);
+    return;
+  }
+  const u = new URL(location.origin + location.pathname);
+  u.searchParams.set('b', _encodeBasketForUrl(state.basket));
+  const url = u.toString();
+  const count = state.basket.length;
+  const text = `Виж цените за ${count} ${count === 1 ? 'продукт' : 'продукта'} в магазините около теб:`;
+
+  // Path 1: native Web Share API (iOS, Android, macOS Safari).
+  // Some browsers expose navigator.share but reject specific shapes — gate on
+  // canShare() when available. Catch every error (not just AbortError) so we
+  // never get stuck in an unsupported native path.
+  if (navigator.share) {
+    const payload = { title: 'Моят списък в Количка', text, url };
+    const canDo = !navigator.canShare || navigator.canShare(payload);
+    if (canDo) {
+      try {
+        await navigator.share(payload);
+        track('basket-shared', { items: count, method: 'native' });
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') {
+          track('basket-share-cancelled', { items: count });
+          return;
+        }
+        // any other failure → fall through to clipboard
+      }
+    }
+  }
+
+  // Path 2: async clipboard (desktop Chrome/FF/Edge, modern Safari, Android WebView ≥ 72).
+  // Requires HTTPS + user-gesture context; we satisfy both.
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('Линкът е копиран ✓');
+      track('basket-shared', { items: count, method: 'clipboard' });
+      return;
+    } catch (_) { /* fall through */ }
+  }
+
+  // Path 3: explicit modal with a copy button + selectable input.
+  // Works everywhere: even when clipboard API is unavailable, the user can
+  // long-press the highlighted text on mobile or Ctrl/Cmd+C on desktop.
+  _showShareUrlModal(url);
+  track('basket-shared', { items: count, method: 'modal-fallback' });
+}
+
+// Wire up share button + the shared-basket banner-clear link.
+document.addEventListener('DOMContentLoaded', () => {
+  const sb = document.getElementById('basket-share');
+  if (sb) sb.addEventListener('click', shareBasket);
+  // Show banner if this session arrived via a shared URL.
+  try {
+    if (sessionStorage.getItem('kolichka:shared-basket')) {
+      const b = document.getElementById('shared-banner');
+      if (b) b.hidden = false;
+      // Auto-switch to basket tab so the user sees what was shared immediately.
+      if (state.basket && state.basket.length > 0) {
+        const basketTab = document.querySelector('[data-tab="basket"]');
+        if (basketTab) basketTab.click();
+      }
+    }
+  } catch (_) {}
+  const sc = document.getElementById('shared-clear');
+  if (sc) sc.addEventListener('click', (e) => {
+    e.preventDefault();
+    state.basket = [];
+    saveBasket();
+    renderBasketItems();
+    $('results-basket').innerHTML = '';
+    dismissSharedBanner();
+  });
+  // Plain dismiss (×): hide the banner but KEEP the imported list intact.
+  const sd = document.getElementById('shared-dismiss');
+  if (sd) sd.addEventListener('click', dismissSharedBanner);
+});
+function dismissSharedBanner() {
+  const b = document.getElementById('shared-banner');
+  if (b) b.hidden = true;
+  try { sessionStorage.removeItem('kolichka:shared-basket'); } catch (_) {}
+}
+function renderBasketItems() {
+  $('basket-items').innerHTML = state.basket.map((item, i) => `<span class="item-chip">${prettyItem(item)} <button data-i="${i}" aria-label="премахни">×</button></span>`).join('') || '<span class="empty" style="padding:6px 0">Натисни категория или въведи продукт.</span>';
+  $('basket-items').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    state.basket.splice(parseInt(b.dataset.i, 10), 1);
+    saveBasket(); renderBasketItems();
+    if (state.basket.length === 0) dismissSharedBanner();
+  }));
+}
+$('basket-add').addEventListener('click', () => { const v = $('basket-input').value.trim().toLowerCase(); if (!v) return; if (!state.basket.includes(v)) state.basket.push(v); $('basket-input').value = ''; saveBasket(); renderBasketItems(); });
+$('basket-input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('basket-add').click(); } });
+$('basket-clear').addEventListener('click', () => { state.basket = []; saveBasket(); renderBasketItems(); $('results-basket').innerHTML = ''; dismissSharedBanner(); });
+
+// ---------- Favorites ----------
+// Recurring shopping: mark items with 🔖 while searching (single tab), keep a
+// saved list in the basket tab, and load it into the basket in one tap.
+// Persisted in localStorage; same item format as the basket (cat:slug | text).
+function loadFavorites() {
+  try { const a = JSON.parse(localStorage.getItem('kolichka.favorites') || '[]');
+    if (Array.isArray(a)) state.favorites = a.filter(x => typeof x === 'string'); } catch (_) {}
+}
+function saveFavorites() {
+  try { localStorage.setItem('kolichka.favorites', JSON.stringify(state.favorites || [])); } catch (_) {}
+}
+const _favKey = x => String(x).trim().toLowerCase();
+function isFavorite(item) { const k = _favKey(item); return (state.favorites || []).some(f => _favKey(f) === k); }
+function addFavorite(item) {
+  const v = String(item || '').trim().toLowerCase();
+  if (!v || isFavorite(v)) return false;
+  state.favorites.push(v); saveFavorites(); return true;
+}
+function removeFavorite(item) {
+  const k = _favKey(item);
+  state.favorites = (state.favorites || []).filter(f => _favKey(f) !== k);
+  saveFavorites();
+}
+// Sync the 🔖 buttons rendered on individual result articles (single tab) so
+// already-favourited products show filled.
+function refreshFavItemBtns(root) {
+  (root || document).querySelectorAll('.fav-item-btn').forEach(b => {
+    const on = isFavorite(b.dataset.fav || '');
+    b.classList.toggle('fav-on', on);
+    b.textContent = on ? '♥' : '♡';
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.title = on ? 'Премахни от любими' : 'Запази в любими';
+  });
+}
+// Attach toggle handlers to the per-article 🔖 buttons inside a results container.
+function wireFavItemBtns(container) {
+  if (!container) return;
+  refreshFavItemBtns(container);
+  container.querySelectorAll('.fav-item-btn').forEach(b => {
+    b.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const name = b.dataset.fav || '';
+      if (!name) return;
+      if (isFavorite(name)) { removeFavorite(name); showToast('Премахнато от любими'); }
+      else { addFavorite(name); showToast('Запазено в любими ♥'); }
+      renderFavPanel();
+    });
+  });
+}
+// Jump from the single tab to the favorites loader: switch to the Basket tab,
+// expand the favorites panel, and scroll it into view.
+function goToFavorites() {
+  const basketTab = document.querySelector('[data-tab="basket"]');
+  if (basketTab) basketTab.click();
+  const head = $('fav-head'), body = $('fav-body');
+  if (head && body) { body.hidden = false; head.setAttribute('aria-expanded', 'true'); }
+  const panel = $('fav-panel');
+  if (panel) setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+}
+function renderFavPanel() {
+  const favs = state.favorites || [];
+  const n = favs.length;
+  const cnt = $('fav-count'); if (cnt) cnt.textContent = n;
+  const sCnt = $('single-fav-count'); if (sCnt) sCnt.textContent = n;
+  // The single-tab "→ Любими" link only makes sense with saved items.
+  const sfl = $('single-fav-link'); const sbar = sfl && sfl.closest('.single-fav-bar');
+  if (sbar) sbar.style.display = (n === 0) ? 'none' : '';
+  // Hide the whole panel when empty — new users shouldn't see an empty box.
+  const panel = $('fav-panel'); if (panel) panel.hidden = (n === 0);
+  const wrap = $('fav-items');
+  if (wrap) {
+    wrap.innerHTML = favs.map((item, i) =>
+      `<span class="fav-chip" data-item="${_escHtml(item)}" role="button" tabindex="0" title="Добави в кошницата">`
+      + `<span class="fav-pick">${prettyItem(item)}</span>`
+      + `<button class="fav-x" data-i="${i}" aria-label="премахни от любими">×</button></span>`
+    ).join('');
+    // Tap the chip → add that one item to the basket ("pick from it").
+    wrap.querySelectorAll('.fav-chip').forEach(chip => chip.addEventListener('click', (e) => {
+      if (e.target.closest('.fav-x')) return;   // × handled separately
+      const item = chip.dataset.item; if (!item) return;
+      if (!state.basket.includes(item)) {
+        state.basket.push(item); saveBasket(); renderBasketItems();
+        track('favorite-picked', {}); showToast('Добавено в кошницата ✓');
+      } else showToast('Вече е в кошницата');
+    }));
+    // × → remove from favourites (not from the basket).
+    wrap.querySelectorAll('.fav-x').forEach(b => b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.favorites.splice(parseInt(b.dataset.i, 10), 1); saveFavorites(); renderFavPanel();
+    }));
+  }
+  const loadBtn = $('fav-load'); if (loadBtn) loadBtn.disabled = (n === 0);
+  refreshFavItemBtns();  // keep result-article buttons in sync
+}
+(function wireFavorites() {
+  loadFavorites();
+  const head = $('fav-head'), body = $('fav-body');
+  if (head && body) head.addEventListener('click', () => {
+    const willOpen = body.hidden;
+    body.hidden = !willOpen;
+    head.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  });
+  const loadBtn = $('fav-load');
+  if (loadBtn) loadBtn.addEventListener('click', () => {
+    if (!state.favorites || !state.favorites.length) return;
+    state.basket = state.favorites.slice();   // replace (chosen behaviour)
+    saveBasket(); renderBasketItems();
+    track('favorites-loaded', { items: state.basket.length });
+    showToast('Кошницата е заредена с любими ✓');
+    renderBasket();
+    // After loading, scroll down to the list so the user sees what landed in
+    // the basket (favourites are at the top, the list is further down).
+    const head = $('basket-list-head');
+    if (head) setTimeout(() => head.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  });
+  const saveBtn = $('fav-save-basket');
+  if (saveBtn) saveBtn.addEventListener('click', () => {
+    if (!state.basket || !state.basket.length) { showToast('Кошницата е празна', true); return; }
+    let added = 0; state.basket.forEach(it => { if (addFavorite(it)) added++; });
+    renderFavPanel();
+    showToast(added ? `Запазени ${added} в любими ♥` : 'Вече са в любими');
+    // The favourites panel is at the top of the tab; bring it into view, open
+    // it, and flash it so the user immediately sees what was saved.
+    const panel = $('fav-panel'), body = $('fav-body'), head = $('fav-head');
+    if (body && head) { body.hidden = false; head.setAttribute('aria-expanded', 'true'); }
+    if (panel) {
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      panel.classList.remove('fav-flash'); void panel.offsetWidth; panel.classList.add('fav-flash');
+      setTimeout(() => panel.classList.remove('fav-flash'), 1200);
+    }
+  });
+  const sfl = $('single-fav-link');
+  if (sfl) sfl.addEventListener('click', () => { track('favorites-open-from-single', {}); goToFavorites(); });
+  renderFavPanel();
+})();
+
+async function renderBasket() {
+  const headEl = $('results-head-basket');
+  if (state.basket.length === 0) { $('results-basket').innerHTML = '<div class="empty">Добави поне един продукт.</div>'; if (headEl) headEl.textContent = ''; return; }
+  if (headEl) headEl.textContent = 'Най-евтини магазини';
+  $('results-basket').innerHTML = '<div class="empty">Изчислявам кошниците…</div>';
+  const { lat, lng } = state.center;
+  const myGen = locationGen;
+  const r = await fetch(`/api/basket?items=${encodeURIComponent(state.basket.join(','))}&lat=${lat}&lng=${lng}&radius_km=${state.radius}`).then(r => r.json());
+  if (isStale(myGen)) return;
+  if (!r.stores || r.stores.length === 0) {
+    const suggested = Math.min(25, state.radius * 2);
+    const canWiden = suggested > state.radius;
+    $('results-basket').innerHTML = `<div class="empty">
+      <div style="font-size:24px;margin-bottom:6px">🗺️</div>
+      <div style="font-weight:600;margin-bottom:8px">Няма магазини на ${state.radius} км от теб</div>
+      <div style="color:var(--muted);font-size:12px;line-height:1.5;margin-bottom:10px">
+        Възможни причини:<br>
+        • Радиусът ти е твърде малък — пробвай по-голям<br>
+        • Локацията ти е извън обхват на проследяваните вериги<br>
+        • Опитай с друг адрес в полето горе
+      </div>
+      ${canWiden ? `<button class="primary" id="basket-widen-btn" type="button">Разшири на ${suggested} км</button>` : ''}
+    </div>`;
+    const wb = $('basket-widen-btn');
+    if (wb) wb.addEventListener('click', () => { state.radius = suggested; $('radius').value = suggested; $('radius-val').textContent = suggested.toFixed(1) + ' км'; refreshMap(); renderBasket(); });
+    return;
+  }
+
+  // ---- Mixed-store optimum card (cheapest per item across all stores) ----
+  let mixedHtml = '';
+  const mx = r.mixed_optimal;
+  if (mx && mx.items_found > 0) {
+    const bestSingle = r.stores.find(s => s.complete) || r.stores[0];
+    const savings = (bestSingle && mx.complete && bestSingle.complete)
+      ? (bestSingle.total - mx.total) : null;
+    const rowsHtml = mx.breakdown.map(b => {
+      // Missing item: emit all THREE grid cells (name / shop / price) so the
+      // row stays column-aligned with the others — otherwise the price slides
+      // left into the shop column. Shop cell reads "0 магазина", like the
+      // per-store cards below.
+      if (!b.name) return `<div class="mixed-row"><div class="mr-name mr-missing"><b>${b.query}</b></div><div class="mr-shop mr-missing">0 магазина</div><div class="mr-price mr-missing">—</div></div>`;
+      const onPromo = b.price_retail && b.price_retail > b.price;
+      const pct = onPromo ? Math.round(100 - 100 * b.price / b.price_retail) : 0;
+      const priceCell = onPromo
+        ? `<span style="text-decoration:line-through;color:var(--muted);margin-right:4px;font-weight:400">${b.price_retail.toFixed(2)}</span><span>${b.price.toFixed(2)} €</span> <span class="promo-pct">−${pct}%</span>`
+        : `${b.price.toFixed(2)} €`;
+      const dateBadge = b.is_stale ? staleBadge(b.snapshot_date) : snapshotBadge(b.snapshot_date);
+      return `<div class="mixed-row${b.is_stale?' stale':''}" data-lat="${b.store_lat}" data-lng="${b.store_lng}" style="cursor:pointer" title="${b.name}">
+        <div class="mr-name"><b>${b.query}</b> ${dateBadge}</div>
+        <div class="mr-shop">📍 ${b.chain_name} · ${(b.dist_m/1000).toFixed(2)} км</div>
+        <div class="mr-price">${priceCell}</div>
+      </div>`;
+    }).join('');
+    const savingsLine = (savings !== null && savings > 0.01)
+      ? `<div class="mixed-savings">−${savings.toFixed(2)} € срещу ${bestSingle.chain_name} (${bestSingle.total.toFixed(2)} €)</div>`
+      : '<div class="mixed-savings"></div>';
+    const partialBadge = mx.complete ? '' : ` · ${mx.items_found}/${mx.items_total} продукта`;
+    mixedHtml = `<div class="basket-card mixed">
+      <div class="mixed-head">
+        <div>
+          <div class="mixed-title">💰 Най-евтино комбинирано</div>
+          <div class="mixed-sub">${mx.stores_count} ${mx.stores_count === 1 ? 'магазин' : 'магазина'}${partialBadge}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="basket-total ${mx.complete ? 'basket-complete' : 'basket-partial'}">${mx.total.toFixed(2)} €</div>
+        </div>
+      </div>
+      <div class="mixed-rows">${rowsHtml}</div>
+      <div class="mixed-footer">${savingsLine}<div class="mixed-sub">Изисква обиколка на ${mx.stores_count} магазина</div></div>
+    </div>`;
+  }
+
+  $('results-basket').innerHTML = mixedHtml + r.stores.slice(0, 12).map(s => {
+    const completeCls = s.complete ? 'basket-complete' : 'basket-partial';
+    const breakdown = s.breakdown.map(b => {
+      if (!b.name) return `<div class="item-name"><span class="item-missing">${b.query} — ${b.chain_has_elsewhere ? 'няма в този магазин' : 'няма данни днес'}</span></div><div class="item-price">—</div>`;
+      const onPromo = b.price_retail && b.price_retail > b.price;
+      const pct = onPromo ? Math.round(100 - 100 * b.price / b.price_retail) : 0;
+      const priceCell = onPromo
+        ? `<span style="text-decoration:line-through;color:var(--muted);margin-right:6px">${b.price_retail.toFixed(2)}</span><b>${b.price.toFixed(2)} €</b> <span class="promo-pct">−${pct}%</span>`
+        : `${b.price.toFixed(2)} €`;
+      const dateBadge = b.is_stale ? staleBadge(b.snapshot_date) : snapshotBadge(b.snapshot_date);
+      return `<div class="item-name${b.is_stale?' stale':''}"><b>${b.query}</b> — ${b.name} ${dateBadge}</div><div class="item-price${b.is_stale?' stale':''}">${priceCell}</div>`;
+    }).join('');
+    return `<div class="basket-card clickable-store" data-lat="${s.lat}" data-lng="${s.lng}"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><div><h3 style="margin:0 0 2px;font-size:14px">${s.chain_name}</h3><div class="meta">${s.address} · ${(s.dist_m/1000).toFixed(2)} км</div></div><div style="text-align:right"><div class="basket-total ${completeCls}">${s.total.toFixed(2)} €</div><div class="meta">${s.items_found}/${s.items_total} продукта${s.complete?'':' (частично)'}</div></div></div><div class="basket-breakdown">${breakdown}</div></div>`;
+  }).join('');
+  document.querySelectorAll('#results-basket .clickable-store, #results-basket .mixed-row[data-lat]').forEach(row => { row.addEventListener('click', () => { const la = parseFloat(row.dataset.lat), ln = parseFloat(row.dataset.lng); if (Number.isFinite(la)&&Number.isFinite(ln) && map) map.flyTo([la, ln], 16, { duration: 0.5 }); }); });
+}
+$('go-basket').addEventListener('click', async () => {
+  track('basket-compared', {
+    items: (state.basket || []).length,
+    radius_km: state.radius,
+    has_geo: !!(state.center && Number.isFinite(state.center.lat)),
+  });
+  await renderBasket();
+  if (window.innerWidth <= 640) {
+    document.getElementById('results-basket')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+});
+
+// ---------- Promotions ----------
+// The promo category chips are rendered by setupTwoLevelCats (multi-select) in
+// loadCategories. promoCatsSelected holds the active filter set.
+const promoCatsSelected = new Set();
+$('promo-clear-cats')?.addEventListener('click', () => {
+  promoCatsSelected.clear();
+  // Clear active states on whatever article chips are currently shown.
+  if (_promoCats) _promoCats.refreshSub();
+  document.querySelectorAll('#cat-grid-promos .cat-group-chip').forEach(x => x.classList.remove('active'));
+  $('promo-q').value = '';
+  renderPromotions();
+});
+$('promo-go')?.addEventListener('click', async () => {
+  await renderPromotions();
+  if (window.innerWidth <= 640) document.getElementById('results-promotions')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+$('promo-q')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('promo-go').click(); } });
+
+function fmtFreshness(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  const ageDays = Math.floor((Date.now() - d.getTime()) / 86400000);
+  const ageLabel = ageDays === 0 ? 'днес' : ageDays === 1 ? 'вчера' : `преди ${ageDays} дни`;
+  return `Последно обновяване: ${dd}/${mm}/${yyyy} (${ageLabel})`;
+}
+
+async function renderPromotions() {
+  { const h = $('results-head-promos'); if (h) h.textContent = 'Промоции'; }
+  $('results-promotions').innerHTML = '<div class="empty">Зареждам промоции…</div>';
+  $('promo-freshness').textContent = '';
+  const params = new URLSearchParams({ lat: state.center.lat, lng: state.center.lng, radius_km: state.radius, per_chain: '8' });
+  if (promoCatsSelected.size > 0) params.set('categories', Array.from(promoCatsSelected).join(','));
+  const qTerm = $('promo-q').value.trim();
+  if (qTerm) params.set('q', qTerm);
+  const myGen = locationGen;
+  const r = await fetch('/api/promotions?' + params).then(r => r.json());
+  if (isStale(myGen)) return;
+  $('promo-freshness').textContent = fmtFreshness(r.latest_snapshot);
+  if (!r.chains || r.chains.length === 0) {
+    $('results-promotions').innerHTML = `<div class="empty">${qTerm ? `Няма промоции за „${qTerm}" в района.` : 'Няма промоции в района при тези филтри.'}</div>`;
+    return;
+  }
+  $('results-promotions').innerHTML = r.chains.map(c => {
+    const chainFresh = c.latest_snapshot ? snapshotBadge(c.latest_snapshot) : '';
+    return `<div class="promo-card"><h3><span class="chain-name">${c.chain_name}</span> <span class="store-count">${c.n_stores} ${c.n_stores===1?'магазин':'магазина'} в района ${chainFresh}</span></h3>${c.items.map(it => `<div class="promo-item"><span class="name" title="${it.raw_name}">${it.raw_name}${it.qty?` <span class="store-count">(${it.qty.value}${it.qty.unit})</span>`:''}</span><span class="retail">${it.price_retail.toFixed(2)} €</span><span class="promo">${it.price_promo.toFixed(2)} €</span></div><div style="margin-top:-6px; padding-bottom:6px"><span class="pct">−${it.pct_off}%</span> ${snapshotBadge(it.snapshot_date)}</div>`).join('')}</div>`;
+  }).join('');
+}
+
+loadCategories().then(() => { renderBasketItems(); renderFavPanel(); });
+</script>
+
+<footer class="app-footer">
+  <button class="subscribe" id="rel-btn" type="button" hidden style="margin:0 auto 12px"></button>
+  <div id="release-banner" class="release-banner" style="max-width:520px; margin:0 auto 14px; text-align:left">
+    <div class="rb-head">
+      <span class="rb-title" id="rb-title"></span>
+      <button class="rb-close" id="rb-close" type="button" aria-label="Затвори">✕</button>
+    </div>
+    <ul id="rb-changes"></ul>
+    <a class="rb-discord" id="rb-discord" href="#" target="_blank" rel="noopener">💬 Обсъди в Discord →</a>
+  </div>
+  <div class="fb-prompt">Имаш мнение, грешка или похвала? Сподели:</div>
+
+  <!-- Compact entry — expands to full form on first click -->
+  <button class="primary" id="fb-open" type="button" style="margin-top:8px">📣 Изпрати отзив</button>
+  <div class="sub" style="font-size:11px; margin-top:6px">или пиши на <a id="feedback-email" href="#">feedback</a></div>
+
+  <div id="fb-card" hidden style="max-width:520px; margin:14px auto 0; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center">
+      <strong>Какъв е отзивът?</strong>
+      <button class="ghost" id="fb-close" type="button" style="padding:2px 8px">✕</button>
+    </div>
+
+    <!-- 4 category chips -->
+    <div id="fb-cats" role="radiogroup" aria-label="Тип отзив" style="display:flex; gap:6px; flex-wrap:wrap; margin:10px 0">
+      <button type="button" class="fb-cat" data-cat="bug">🐛 Бъг в приложението</button>
+      <button type="button" class="fb-cat" data-cat="product">📦 Грешен продукт / цена</button>
+      <button type="button" class="fb-cat" data-cat="suggestion">💡 Предложение</button>
+      <button type="button" class="fb-cat" data-cat="praise">🌟 Похвала</button>
+    </div>
+
+    <div id="fb-rating-row" hidden style="margin:10px 0">
+      <div class="sub" style="font-size:12px; margin-bottom:4px">Колко зле/добре е (1-5)?</div>
+      <div class="stars" id="stars" role="radiogroup" aria-label="Оценка 1-5 звезди">
+        <span data-v="1" role="radio">★</span>
+        <span data-v="2" role="radio">★</span>
+        <span data-v="3" role="radio">★</span>
+        <span data-v="4" role="radio">★</span>
+        <span data-v="5" role="radio">★</span>
+      </div>
+    </div>
+
+    <input id="fb-subject" type="text" maxlength="200" placeholder="Кратко заглавие (по избор)" style="width:100%; margin-top:8px" />
+    <textarea id="fb-comment" maxlength="4000" rows="4" placeholder="Опиши какво се случи / какво искаш да видиш" style="width:100%; margin-top:8px; resize:vertical; font:14px/1.4 -apple-system, system-ui, sans-serif"></textarea>
+
+    <details style="margin-top:10px">
+      <summary style="cursor:pointer; color:var(--muted); font-size:12px">Технически данни (изпращат се за по-бързо решение)</summary>
+      <pre id="fb-context" style="background:#0d1117; color:#8b94a3; padding:10px; border-radius:6px; font-size:11px; max-height:160px; overflow:auto; margin:6px 0 0; white-space:pre-wrap; word-break:break-all"></pre>
+    </details>
+
+    <div class="fb-thanks" id="fb-err" hidden style="color:#ff5d8f; margin-top:8px"></div>
+
+    <button class="primary" id="fb-send" type="button" style="width:100%; margin-top:10px">Изпрати</button>
+  </div>
+
+  <div class="fb-thanks" id="fb-thanks">Благодаря за отзива! Ще го прегледаме.</div>
+  <div style="margin-top:14px" id="fb-summary"></div>
+</footer>
+
+<div id="cookie-banner" hidden>
+  <span>Този сайт ползва само технически бисквитки и локално съхранение за предпочитания (тема, сесия). Не използваме реклама или проследяване. Виж <a href="/privacy.html">Поверителност</a>.</span>
+  <button type="button" id="cookie-ack">ОК, разбрах</button>
+</div>
+
+<div class="site-footer">
+  <div class="stats" id="stats">Зареждам…</div>
+  <a id="discord-link" href="#" target="_blank" rel="noopener" class="discord">💬 Присъедини се в Discord</a>
+  <button type="button" class="subscribe" id="footer-subscribe-btn">📨 Абонирай се за промоции</button>
+  <br/>
+  Цените се обновяват ежедневно директно от <a id="datasource-link" href="#" target="_blank" rel="noopener">kolkostruva.bg</a> · карти © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
+  <br/>
+  <a href="/privacy.html">Поверителност</a> · <a href="/terms.html">Общи условия</a> · <a id="feedback-email" href="#">feedback</a> · <a id="privacy-email" href="#">privacy</a>
+  <br/>
+  <span style="font-size:10px; opacity:0.7">Цените са ориентировъчни — проверете крайната цена в магазина.</span>
+</div>
+
+
+<script>
+// ---------- Feedback widget (v2: categories + auto-context) ----------
+const FB = {
+  category: null,
+  rating: 0,
+  errors: [],     // last 10 caught console errors
+  failedFetches: [], // last 5 failed fetches with URL + status
+};
+
+// Catch console.error / window errors to surface to bug reports
+const _origErr = console.error.bind(console);
+console.error = (...args) => {
+  FB.errors.push({ t: new Date().toISOString(), msg: args.map(a => typeof a === 'string' ? a : (a?.message || JSON.stringify(a))).join(' ').slice(0, 300) });
+  if (FB.errors.length > 10) FB.errors.shift();
+  _origErr(...args);
+};
+window.addEventListener('error', e => {
+  FB.errors.push({ t: new Date().toISOString(), msg: `${e.message} @ ${e.filename}:${e.lineno}` });
+  if (FB.errors.length > 10) FB.errors.shift();
+});
+window.addEventListener('unhandledrejection', e => {
+  FB.errors.push({ t: new Date().toISOString(), msg: 'unhandled: ' + (e.reason?.message || e.reason || '?') });
+  if (FB.errors.length > 10) FB.errors.shift();
+});
+// Wrap fetch to record failures
+const _origFetch = window.fetch.bind(window);
+window.fetch = async (...args) => {
+  try {
+    const r = await _origFetch(...args);
+    if (!r.ok) {
+      FB.failedFetches.push({ t: new Date().toISOString(), url: String(args[0]).slice(0, 200), status: r.status });
+      if (FB.failedFetches.length > 5) FB.failedFetches.shift();
+    }
+    return r;
+  } catch (e) {
+    FB.failedFetches.push({ t: new Date().toISOString(), url: String(args[0]).slice(0, 200), error: e.message });
+    if (FB.failedFetches.length > 5) FB.failedFetches.shift();
+    throw e;
+  }
+};
+
+function buildFbContext() {
+  const tab = document.querySelector('.tab.active')?.dataset.tab || null;
+  const q = document.getElementById('q')?.value || null;
+  const promoQ = document.getElementById('promo-q')?.value || null;
+  const basketItems = (typeof state !== 'undefined' && state.basket) ? state.basket.slice(0, 20) : null;
+  const radius = (typeof state !== 'undefined') ? state.radius : null;
+  const center = (typeof state !== 'undefined') ? state.center : null;
+  return {
+    when: new Date().toISOString(),
+    tab,
+    last_query: q || promoQ || null,
+    basket_items: basketItems,
+    radius_km: radius,
+    center,
+    theme: document.body.classList.contains('light') ? 'light' : 'dark',
+    viewport: `${window.innerWidth}x${window.innerHeight}`,
+    pixel_ratio: window.devicePixelRatio,
+    user_agent: navigator.userAgent.slice(0, 300),
+    language: navigator.language,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    online: navigator.onLine,
+    page_load_ms: Math.round(performance.now()),
+    referrer: document.referrer?.slice(0, 200) || null,
+    geo_status: document.getElementById('geo-status')?.textContent?.slice(0, 200) || null,
+    recent_errors: FB.errors.slice(-10),
+    recent_failed_fetches: FB.failedFetches.slice(-5),
+  };
+}
+
+function paintFbCats() {
+  document.querySelectorAll('.fb-cat').forEach(b =>
+    b.classList.toggle('active', b.dataset.cat === FB.category));
+  // Rating row visible only for praise; optional for others
+  const ratingRow = document.getElementById('fb-rating-row');
+  ratingRow.hidden = !FB.category;
+  // Update placeholders so the form contextualises
+  const subject = document.getElementById('fb-subject');
+  const comment = document.getElementById('fb-comment');
+  const placeholders = {
+    bug:        { subj:'Кратко: какво не работи', body:'Какво направи? Какво очакваше да стане? Какво се случи вместо това?' },
+    product:    { subj:'Кой продукт и магазин',   body:'Името на продукта, веригата/магазина, и в какво е грешката (цена, име, липсва, изтекла промоция…).' },
+    suggestion: { subj:'Какво да добавим',         body:'Опиши идеята си — какво да направим за теб?' },
+    praise:     { subj:'Кратко заглавие',          body:'Какво ти хареса? Какво още да направим още по-добре?' },
+  }[FB.category] || {};
+  subject.placeholder = placeholders.subj || 'Кратко заглавие';
+  comment.placeholder = placeholders.body || 'Опиши какво се случи';
+}
+
+function paintStars(n) {
+  document.querySelectorAll('#stars span').forEach(s =>
+    s.classList.toggle('lit', parseInt(s.dataset.v, 10) <= n));
+}
+
+document.querySelectorAll('.fb-cat').forEach(b => {
+  b.addEventListener('click', () => { FB.category = b.dataset.cat; paintFbCats(); });
+});
+document.querySelectorAll('#stars span').forEach(s => {
+  s.addEventListener('mouseover', () => paintStars(parseInt(s.dataset.v, 10)));
+  s.addEventListener('mouseout',  () => paintStars(FB.rating));
+  s.addEventListener('click',     () => { FB.rating = parseInt(s.dataset.v, 10); paintStars(FB.rating); });
+});
+
+document.getElementById('fb-open').addEventListener('click', () => {
+  document.getElementById('fb-card').hidden = false;
+  document.getElementById('fb-open').hidden = true;
+  document.getElementById('fb-context').textContent = JSON.stringify(buildFbContext(), null, 2);
+});
+
+// Deep-link from the weekly email: ?feedback=open auto-opens the widget and
+// scrolls it into view. Fires once on page load, then strips the param so a
+// browser reload doesn't re-open it.
+(function autoOpenFeedbackFromUrl() {
+  const p = new URLSearchParams(location.search);
+  if (p.get('feedback') !== 'open') return;
+  setTimeout(() => {
+    const btn = document.getElementById('fb-open');
+    if (btn && !btn.hidden) btn.click();
+    const card = document.getElementById('fb-card');
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    track('email-feedback-cta-clicked');
+    // Strip the param so reload doesn't re-trigger.
+    p.delete('feedback');
+    const newUrl = location.pathname + (p.toString() ? '?' + p.toString() : '') + location.hash;
+    history.replaceState(null, '', newUrl);
+  }, 800);  // wait a tick for page to settle
+})();
+document.getElementById('fb-close').addEventListener('click', () => {
+  document.getElementById('fb-card').hidden = true;
+  document.getElementById('fb-open').hidden = false;
+});
+
+document.getElementById('fb-send').addEventListener('click', async () => {
+  const err = document.getElementById('fb-err');
+  err.hidden = true; err.textContent = '';
+  if (!FB.category) { err.hidden = false; err.textContent = 'Избери тип отзив.'; return; }
+  if (FB.category === 'praise' && !FB.rating) { err.hidden = false; err.textContent = 'Дай оценка с звезди.'; return; }
+  const subject = document.getElementById('fb-subject').value.trim();
+  const comment = document.getElementById('fb-comment').value.trim();
+  if (FB.category !== 'praise' && !comment) { err.hidden = false; err.textContent = 'Моля, опиши проблема в полето отдолу.'; return; }
+  const body = {
+    category: FB.category,
+    rating: FB.rating || null,
+    subject, comment,
+    url: location.pathname + location.search,
+    context: buildFbContext(),
+  };
+  document.getElementById('fb-send').disabled = true;
+  try {
+    const r = await fetch('/api/feedback', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'грешка');
+    document.getElementById('fb-card').hidden = true;
+    document.getElementById('fb-thanks').style.display = 'block';
+    loadFbSummary();
+  } catch (e) {
+    err.hidden = false; err.textContent = 'Грешка: ' + e.message;
+  } finally { document.getElementById('fb-send').disabled = false; }
+});
+
+async function loadFbSummary() {
+  try {
+    const s = await fetch('/api/feedback/summary').then(r => r.json());
+    if (s && s.total && parseInt(s.total, 10) > 0) {
+      document.getElementById('fb-summary').textContent =
+        `${s.total} ${parseInt(s.total,10) === 1 ? 'отзив' : 'отзива'}${s.avg ? ` · средно ${s.avg}/5` : ''}`;
+    }
+  } catch {}
+}
+loadFbSummary();
+</script>
+
+<script>
+(function() {
+  var KEY = 'kolichka.cookie.ack';
+  try {
+    if (!localStorage.getItem(KEY)) {
+      var b = document.getElementById('cookie-banner');
+      if (b) b.hidden = false;
+    }
+    var btn = document.getElementById('cookie-ack');
+    if (btn) btn.addEventListener('click', function() {
+      try { localStorage.setItem(KEY, new Date().toISOString()); } catch (_) {}
+      var b = document.getElementById('cookie-banner');
+      if (b) b.hidden = true;
+    });
+  } catch (_) {}
+})();
+
+// ─── Subscription pop-in ───────────────────────────────────────────────────
+// Best-practice timing: 60-sec dwell before first show, max once per visit.
+// Once dismissed: suppressed for 30 days. Once subscribed: never shown.
+// Auto-fills lat/lng from the page's `state.center` (set after the user
+// grants geolocation OR types an address). Falls back to a "Share location"
+// link inside the popup if no coords are available yet.
+(function () {
+  const DISMISS_KEY  = 'kolichka:sub-dismissed';
+  const SUBBED_KEY   = 'kolichka:subscribed';
+  const COOLDOWN_DAYS = 30;
+  const DWELL_MS = 30 * 1000;  // 30s converts ~2× better than 60s for short-session apps
+  const POST_BASKET_DELAY_MS = 3 * 1000;  // let user enjoy the result for 3s before asking
+
+  function shown() { try { return !!sessionStorage.getItem('kolichka:sub-shown'); } catch { return false; } }
+  function markShown() { try { sessionStorage.setItem('kolichka:sub-shown', '1'); } catch {} }
+
+  function eligible() {
+    try {
+      if (localStorage.getItem(SUBBED_KEY)) return false;
+      const dismissedAt = parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
+      if (dismissedAt) {
+        const days = (Date.now() - dismissedAt) / 86400000;
+        if (days < COOLDOWN_DAYS) return false;
+      }
+    } catch {}
+    // Don't pop in on tiny screens (likely a thumb-touch error on first tap).
+    if (window.innerWidth < 360) return false;
+    return true;
+  }
+
+  function buildPopup() {
+    const el = document.createElement('div');
+    el.id = 'sub-popup';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', 'Абонамент за промоции');
+    el.innerHTML = `
+      <button class="sub-close" type="button" aria-label="Затвори">×</button>
+      <div class="sub-emoji">📨</div>
+      <div class="sub-title">Промоции около теб</div>
+      <div class="sub-savings" id="sub-savings"></div>
+      <div class="sub-desc">Веднъж седмично — най-добрите оферти на 3 км от теб. Без спам.</div>
+      <div class="sub-loc" id="sub-loc">📍 Локацията ще се прикачи към абонамента ти</div>
+      <form id="sub-form">
+        <input type="email" name="email" placeholder="твоят имейл" required autocomplete="email">
+        <button type="submit">Абонирай се</button>
+      </form>
+      <div class="sub-msg" id="sub-msg"></div>
+      <div class="sub-hint">Откажи по всяко време с един клик.</div>
+    `;
+    document.body.appendChild(el);
+
+    // Fetch localized savings estimate to show real number in the value prop.
+    // Background fetch — popup renders immediately with placeholder, then the
+    // savings line fills in once /api/savings-estimate responds (typically <300ms).
+    const savingsEl = el.querySelector('#sub-savings');
+    const c = (typeof state !== 'undefined' && state && state.center) || null;
+    if (c && Number.isFinite(c.lat) && Number.isFinite(c.lng)) {
+      fetch(`/api/savings-estimate?lat=${c.lat}&lng=${c.lng}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (!d || !d.savings_per_week || d.items_with_promo < 3) return;
+          // Round to nearest 0.5 € for friendly display, and express the saving
+          // as a share of the bill so the number is relatable: "X € instead of
+          // Y €" / "~Z% off" rather than a bare "~X €/week" with no baseline.
+          const v = Math.round(d.savings_per_week * 2) / 2;
+          const vTxt = v.toFixed(v % 1 === 0 ? 0 : 1);
+          const retail = d.retail_total || 0;
+          const pct = retail > 0 ? Math.round(100 * d.savings_per_week / retail) : 0;
+          const n = d.items_with_promo;
+          savingsEl.textContent = (retail > 0 && pct > 0)
+            ? `💰 ${(retail - d.savings_per_week).toFixed(0)} € вместо ${retail.toFixed(0)} € за ${n} основни продукта в промоция — спестяваш ~${vTxt} € (−${pct}%)`
+            : `💰 Спестяваш ~${vTxt} € от основните продукти в промоция тази седмица`;
+          savingsEl.style.display = 'block';
+        })
+        .catch(() => {});
+    }
+
+    const locLine = el.querySelector('#sub-loc');
+    const form    = el.querySelector('#sub-form');
+    const input   = form.querySelector('input[type=email]');
+    const button  = form.querySelector('button');
+    const msg     = el.querySelector('#sub-msg');
+    const closeBtn= el.querySelector('.sub-close');
+
+    function close(reason) {
+      el.classList.remove('visible');
+      setTimeout(() => el.remove(), 300);
+      if (reason === 'dismiss') {
+        try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch {}
+      }
+    }
+    closeBtn.addEventListener('click', () => close('dismiss'));
+    document.addEventListener('keydown', function onEsc(e) {
+      if (e.key === 'Escape') { close('dismiss'); document.removeEventListener('keydown', onEsc); }
+    });
+
+    // Reflect current location state. Reads page `state.center` (set by the
+    // main app after user grants geolocation OR types an address).
+    function refreshLocLine() {
+      const c = (typeof state !== 'undefined' && state && state.center) || null;
+      if (c && Number.isFinite(c.lat) && Number.isFinite(c.lng)) {
+        locLine.textContent = '📍 Ще получаваш оферти за този район';
+        locLine.classList.add('has-loc');
+      } else {
+        locLine.innerHTML = '📍 <a href="#" id="sub-use-loc" style="color:inherit;text-decoration:underline">Сподели локация</a> за оферти около теб';
+        const link = locLine.querySelector('#sub-use-loc');
+        if (link) link.addEventListener('click', e => {
+          e.preventDefault();
+          const useBtn = document.getElementById('use-location');
+          if (useBtn) useBtn.click();
+          setTimeout(refreshLocLine, 800);
+        });
+      }
+    }
+    refreshLocLine();
+    // Re-check every 2 sec while the popup is open (user might grant loc while seeing it).
+    const tick = setInterval(refreshLocLine, 2000);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.className = 'sub-msg'; msg.textContent = '';
+      const email = input.value.trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        msg.className = 'sub-msg err'; msg.textContent = 'Невалиден имейл.';
+        input.focus();
+        return;
+      }
+      const body = { email };
+      const c = (typeof state !== 'undefined' && state && state.center) || null;
+      if (c && Number.isFinite(c.lat) && Number.isFinite(c.lng)) {
+        body.lat = c.lat; body.lng = c.lng;
+      }
+      // If no coords AND no address in the search input — gracefully prompt.
+      const addrInput = document.getElementById('addr-input');
+      if (!body.lat && addrInput && addrInput.value.trim()) {
+        body.address = addrInput.value.trim();
+      }
+
+      button.disabled = true; button.textContent = '…';
+      try {
+        const r = await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          msg.className = 'sub-msg err';
+          msg.textContent = j.error === 'location required'
+            ? 'Сподели локацията си или въведи адрес.'
+            : (j.error || 'Грешка. Опитай отново.');
+          button.disabled = false; button.textContent = 'Абонирай се';
+          return;
+        }
+        msg.className = 'sub-msg ok';
+        msg.textContent = j.status === 'already-confirmed'
+          ? 'Вече си абониран ✓'
+          : 'Готово! Провери имейла си, за да потвърдиш.';
+        try { localStorage.setItem(SUBBED_KEY, '1'); } catch {}
+        track('subscribed', {
+          status: j.status || 'pending',
+          has_geo: !!body.lat,
+          has_address: !!body.address,
+        });
+        clearInterval(tick);
+        setTimeout(() => close('done'), 4000);
+      } catch (e) {
+        msg.className = 'sub-msg err';
+        msg.textContent = 'Мрежова грешка.';
+        button.disabled = false; button.textContent = 'Абонирай се';
+      }
+    });
+
+    // Reveal with animation on next frame.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => el.classList.add('visible'));
+    });
+  }
+
+  // Manual entry — footer button. Always opens, bypassing eligibility
+  // (user explicitly clicked → they want it). No-op if popup already open.
+  window.openSubscribePopup = function () {
+    if (document.getElementById('sub-popup')) return;
+    buildPopup();
+    track('subscribe-popup-shown', { trigger: 'manual' });
+  };
+  const footerBtn = document.getElementById('footer-subscribe-btn');
+  if (footerBtn) footerBtn.addEventListener('click', () => window.openSubscribePopup());
+
+  // Auto entry — respects eligibility + per-session cap. Multiple trigger
+  // sources can call this; first eligible one wins, rest are no-ops.
+  window.maybeShowSubscribePopup = function (source) {
+    if (!eligible() || shown()) return;
+    if (document.getElementById('sub-popup')) return;
+    markShown();
+    buildPopup();
+    track('subscribe-popup-shown', { trigger: source || 'auto' });
+  };
+
+  // Trigger 1: dwell timer (30s)
+  if (eligible() && !shown()) {
+    setTimeout(() => window.maybeShowSubscribePopup('dwell'), DWELL_MS);
+  }
+
+  // Trigger 2: after a successful basket comparison (highest-intent moment —
+  // user just saw the value of price comparison; perfect time to ask if they
+  // want it weekly). Hooks the existing renderBasket function via wrapping.
+  // 3-second delay lets them digest the result first.
+  if (typeof renderBasket === 'function') {
+    const _origRenderBasket = renderBasket;
+    renderBasket = async function () {
+      const r = await _origRenderBasket.apply(this, arguments);
+      // Only trigger if basket actually rendered store results (not empty/error state).
+      const rb = document.getElementById('results-basket');
+      if (rb && rb.querySelector('.basket-card')) {
+        setTimeout(() => window.maybeShowSubscribePopup('post-basket'), POST_BASKET_DELAY_MS);
+      }
+      return r;
+    };
+  }
+})();
+</script>
+</body>
+</html>

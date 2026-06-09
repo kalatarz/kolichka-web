@@ -1,0 +1,1605 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#178a5e" />
+  <title>Количка 2.0 — търси и сравни</title>
+  <meta name="description" content="Намери къде е най-евтино да напазаруваш до теб — сравни цените на хранителни стоки в 1800+ магазина от 130+ вериги. Безплатно, обновявано всеки ден." />
+  <link rel="canonical" id="canonical-link" href="/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Количка" />
+  <meta property="og:locale" content="bg_BG" />
+  <meta property="og:url" id="og-url-meta" content="" />
+  <meta property="og:title" content="Количка — сравни цените на храните до теб" />
+  <meta property="og:description" content="Едно търсене показва къде е най-евтино около теб. 1800+ магазина, цени всеки ден. Безплатно." />
+  <meta property="og:image" content="/favicon-512.png" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Количка — сравни цените на храните до теб" />
+  <meta name="twitter:description" content="Едно търсене показва къде е най-евтино около теб. 1800+ магазина, цени всеки ден." />
+  <meta name="twitter:image" content="/favicon-512.png" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/config.js"></script>  <script>
+    (function() {
+      var cfg = window.__KOLICHKA_CONFIG__ || {};
+      // Apply canonical URL
+      if (cfg.APP_URL) {
+        var cl = document.getElementById('canonical-link');
+        if (cl) cl.href = cfg.APP_URL;
+        var og = document.getElementById('og-url-meta');
+        if (og) og.content = cfg.APP_URL;
+      }
+      // Apply Discord link
+      if (cfg.DISCORD_URL) {
+        var dl = document.getElementById('discord-link');
+        if (dl) { dl.href = cfg.DISCORD_URL; } else { /* hide discord button */ }
+      }
+      // Apply data source link
+      if (cfg.DATA_SOURCE_URL) {
+        var ds = document.getElementById('datasource-link');
+        if (ds) ds.href = cfg.DATA_SOURCE_URL;
+      }
+      // Inject analytics if configured
+      if (cfg.ANALYTICS_SCRIPT && cfg.ANALYTICS_WEBSITE_ID) {
+        var s = document.createElement('script');
+        s.defer = true;
+        s.src = cfg.ANALYTICS_SCRIPT;
+        s.setAttribute('data-website-id', cfg.ANALYTICS_WEBSITE_ID);
+        s.setAttribute('data-do-not-track', 'true');
+        document.head.appendChild(s);
+      }
+    })();
+
+      if (cfg.FEEDBACK_EMAIL) {
+        var fe = document.getElementById('feedback-email');
+        if (fe) { fe.href = 'mailto:' + cfg.FEEDBACK_EMAIL; fe.textContent = cfg.FEEDBACK_EMAIL; }
+      }
+      if (cfg.PRIVACY_EMAIL) {
+        var pe = document.getElementById('privacy-email');
+        if (pe) { pe.href = 'mailto:' + cfg.PRIVACY_EMAIL; pe.textContent = cfg.PRIVACY_EMAIL; }
+      }
+  </script>
+  <script>
+    window.track = function (n, d) { try { window.umami && window.umami.track && window.umami.track(n, d || {}); } catch (_) {} };
+    // Stable first-party visitor id -> lets Umami measure returning users / weekly
+    // retention (umami.identify populates session.distinct_id). No PII: a random id
+    // in localStorage. Respects the same do-not-track setting as the tracker itself.
+    (function () {
+      var v; try { v = localStorage.getItem('kolichka.vid'); if (!v) { v = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)); localStorage.setItem('kolichka.vid', v); } } catch (_) { return; }
+      (function id(n) { try { if (window.umami && window.umami.identify) { window.umami.identify(v); return; } } catch (_) {} if (n < 40) setTimeout(function () { id(n + 1); }, 300); })(0);
+    })();
+  </script>
+  <style>
+    :root {
+      --bg:#f5f7fa; --card:#ffffff; --line:#e3e7ee; --muted:#56607a; --text:#0f1525;
+      --accent:#178a5e; --accent-soft:rgba(23,138,94,.10); --warn:#b65c12; --pink:#c81f6b;
+      --best:#0f8a4d; --best-bg:#e9f7ef; --hi:#ff8c1a; --promo:#d23b3b;
+      --shadow:0 1px 2px rgba(15,21,37,.05), 0 4px 18px rgba(15,21,37,.04);
+    }
+    body.dark {
+      --bg:#0e1116; --card:#171b22; --line:#262b34; --muted:#8b94a3; --text:#e8ecf1;
+      --accent:#5dd3a8; --accent-soft:rgba(93,211,168,.12); --warn:#f0b46a; --pink:#ff5d8f;
+      --best:#5dd3a8; --best-bg:rgba(23,138,94,.14); --hi:#ff8c1a; --promo:#ff6b6b;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 22px rgba(0,0,0,.28);
+    }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    [hidden] { display:none !important; }
+    html, body { margin:0; }
+    /* Hard stop against any horizontal shift/scroll on narrow phones.
+       overflow-x:hidden on <html> clips the viewport without breaking the
+       sticky header/map (their containing block is the scrollport). */
+    html { overflow-x:hidden; }
+    body {
+      font:15px/1.45 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+      background:var(--bg); color:var(--text); padding:0 0 120px; min-height:100vh;
+      max-width:100%; overflow-x:hidden;
+    }
+    @supports (overflow:clip) { body { overflow-x:clip; } }
+    /* let flex/grid children shrink instead of forcing the page wider than the viewport */
+    .store-map > * { min-width:0; }
+    .store-list { min-width:0; }
+    #map { max-width:100%; }
+    img, svg { max-width:100%; }
+    .prod-name, .bc-name, .cs-chain, .sr-prod, .bs-line span, .cs-line span { overflow-wrap:anywhere; }
+    button, input { font-family:inherit; }
+    button { cursor:pointer; }
+    .wrap { max-width:760px; margin:0 auto; padding:0 14px; }
+
+    /* ---------- Header ---------- */
+    header.top { position:sticky; top:0; z-index:600; background:var(--bg); border-bottom:1px solid var(--line); }
+    .top-row { display:flex; align-items:center; gap:10px; padding:10px 0 8px; }
+    .brand { display:inline-flex; align-items:center; gap:7px; font-weight:800; font-size:18px;
+      letter-spacing:-.02em; color:var(--text); text-decoration:none; flex:0 0 auto; }
+    .brand .v2 { font-size:10px; font-weight:800; color:#fff; background:var(--accent); border-radius:999px; padding:2px 7px; }
+    /* Classic ⇄ New(beta) switch, next to the logo */
+    .ver-seg { display:inline-flex; flex:0 0 auto; border:1px solid var(--line); border-radius:999px; overflow:hidden; font-size:11px; font-weight:700; box-shadow:var(--shadow); }
+    .ver-seg .vs { padding:6px 10px; color:var(--muted); text-decoration:none; background:var(--card); white-space:nowrap; display:inline-flex; align-items:center; gap:4px; }
+    .ver-seg a.vs:hover { color:var(--accent); }
+    .ver-seg .vs-on { background:var(--accent); color:#fff; }
+    .ver-seg .vs-beta { font-size:8px; background:rgba(255,255,255,.28); border-radius:4px; padding:1px 4px; text-transform:uppercase; letter-spacing:.03em; }
+    /* Keep "Количка" visible at all sizes so users always know the app; shrink the
+       switch instead of hiding the name on small phones. */
+    @media (max-width:600px) {
+      .brand { font-size:16px; }
+      .top-row { gap:7px; }
+      .ver-seg { font-size:10px; }
+      .ver-seg .vs { padding:5px 8px; }
+    }
+    @media (max-width:360px) { .ver-seg .vs-beta { display:none; } }
+    .top-spacer { flex:1 1 auto; }
+    .loc-chip { width:100%; margin:0 0 8px; display:flex; align-items:center; gap:8px; background:var(--card);
+      border:1px solid var(--line); border-radius:12px; padding:11px 14px; font-size:14px; color:var(--text);
+      box-shadow:var(--shadow); cursor:pointer; overflow:hidden; }
+    .loc-chip .lc-pin { flex:0 0 auto; }
+    .loc-chip .lc-text { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .loc-chip .lc-text b { color:var(--accent); font-weight:700; }
+    .loc-chip .lc-cog { flex:0 0 auto; color:var(--muted); font-size:13px; }
+    .icon-btn { flex:0 0 auto; width:38px; height:38px; border-radius:50%; border:1px solid var(--line);
+      background:var(--card); color:var(--muted); font-size:16px; display:inline-flex; align-items:center; justify-content:center; box-shadow:var(--shadow); }
+
+    /* ---------- Location + filters panel ---------- */
+    .ctrl { background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow);
+      margin:0 0 6px; padding:14px; display:none; }
+    .ctrl.open { display:block; }
+    .ctrl .cl-lbl { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:12px 2px 7px; }
+    .ctrl .cl-lbl:first-child { margin-top:0; }
+    .loc-row { display:flex; gap:8px; position:relative; }
+    .loc-row input { flex:1 1 auto; min-width:0; border:1px solid var(--line); background:var(--bg); color:var(--text);
+      border-radius:10px; padding:11px 12px; font-size:15px; }
+    .loc-row .loc-mine { flex:0 0 auto; border:1px solid var(--accent); background:var(--accent-soft); color:var(--accent);
+      border-radius:10px; padding:0 13px; font-size:13px; font-weight:700; }
+    .loc-suggest { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--card); border:1px solid var(--line);
+      border-radius:10px; box-shadow:var(--shadow); z-index:50; overflow:hidden; max-height:240px; overflow-y:auto; display:none; }
+    .loc-suggest.open { display:block; }
+    .loc-suggest > div { padding:10px 12px; font-size:13px; border-bottom:1px solid var(--line); }
+    .loc-suggest > div:last-child { border-bottom:none; }
+    .loc-suggest > div:hover { background:var(--accent-soft); }
+    .seg { display:flex; gap:7px; flex-wrap:wrap; }
+    .seg button { border:1px solid var(--line); background:var(--bg); color:var(--text); border-radius:999px;
+      padding:8px 15px; font-size:13.5px; font-weight:700; }
+    .seg button.on { background:var(--accent); color:#fff; border-color:transparent; }
+    .widen-nudge { display:block; width:100%; margin:12px 0 0; padding:11px; border:1px dashed var(--line); background:var(--card); color:var(--accent); border-radius:12px; font-weight:700; font-size:13px; cursor:pointer; }
+    .chain-chips { display:flex; gap:7px; flex-wrap:wrap; }
+    .chain-chip { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--bg);
+      color:var(--text); border-radius:999px; padding:7px 12px; font-size:13px; font-weight:600; opacity:.45; }
+    .chain-chip.on { opacity:1; border-color:transparent; }
+    .chain-chip .cc-dot { width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+    .chain-actions { margin-top:8px; display:flex; gap:14px; }
+    .chain-actions button { border:none; background:none; color:var(--accent); font-size:12.5px; font-weight:700; padding:0; }
+
+    /* ---------- Search ---------- */
+    .search-wrap { position:relative; padding:10px 0 6px; }
+    .search-box { display:flex; align-items:center; gap:8px; background:var(--card); border:2px solid var(--accent);
+      border-radius:14px; padding:4px 6px 4px 14px; box-shadow:0 4px 20px rgba(23,138,94,.10); }
+    body.dark .search-box { box-shadow:0 4px 20px rgba(0,0,0,.35); }
+    .search-box .si-mag { font-size:18px; color:var(--accent); flex:0 0 auto; }
+    .search-box input { flex:1 1 auto; min-width:0; border:none; outline:none; background:transparent; color:var(--text); font-size:17px; padding:12px 4px; }
+    .search-box input::placeholder { color:var(--muted); }
+    .search-box .si-clear { border:none; background:transparent; color:var(--muted); font-size:20px; width:34px; height:34px; border-radius:50%; flex:0 0 auto; }
+    .search-box .si-go { border:none; background:var(--accent); color:#fff; font-weight:700; border-radius:10px; padding:11px 16px; font-size:15px; flex:0 0 auto; }
+    .ac { position:absolute; left:0; right:0; top:calc(100% - 2px); z-index:700; background:var(--card); border:1px solid var(--line);
+      border-radius:12px; box-shadow:var(--shadow); overflow:hidden; max-height:300px; overflow-y:auto; display:none; }
+    .ac.open { display:block; }
+    .ac > div { padding:11px 14px; font-size:14px; border-bottom:1px solid var(--line); display:flex; gap:9px; align-items:center; }
+    .ac > div:last-child { border-bottom:none; }
+    .ac > div.sel, .ac > div:hover { background:var(--accent-soft); }
+
+    /* Two-level category groups — wrap on every viewport so they work on desktop
+       (no horizontal-scroll dependency) and stay tappable on mobile. */
+    .groups { display:flex; flex-wrap:wrap; gap:7px; padding:10px 0 2px; }
+    .group-chip { border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px;
+      padding:8px 14px; font-size:13.5px; font-weight:700; box-shadow:var(--shadow); display:inline-flex; align-items:center; gap:5px; }
+    .group-chip.active { background:var(--accent); color:#fff; border-color:transparent; }
+    .group-chip.promo { border-color:var(--promo); color:var(--promo); }
+    .group-chip.promo.active { background:var(--promo); color:#fff; }
+    .subcats { display:flex; flex-wrap:wrap; gap:6px; padding:8px 0 2px; }
+    .subcats:empty { display:none; }
+    .subcat { border:1px dashed var(--line); background:var(--bg); color:var(--text); border-radius:999px;
+      padding:6px 12px; font-size:12.5px; font-weight:600; }
+    .subcat:hover { border-color:var(--accent); color:var(--accent); }
+
+    /* ---------- Results ---------- */
+    .section-label { font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.05em;
+      margin:22px 2px 10px; display:flex; align-items:center; gap:8px; }
+    .section-label::after { content:""; flex:1; height:1px; background:var(--line); }
+    .back-btn { border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:8px 14px;
+      font-size:13px; font-weight:700; margin:14px 0 0; box-shadow:var(--shadow); }
+
+    .best-card { background:var(--best-bg); border:1px solid var(--best); border-left:5px solid var(--best); border-radius:14px;
+      padding:14px 16px; box-shadow:var(--shadow); }
+    .best-card .bc-tag { font-size:11px; font-weight:800; color:var(--best); text-transform:uppercase; letter-spacing:.05em; }
+    .best-card .bc-name { font-size:16px; font-weight:700; margin:3px 0 2px; line-height:1.25; }
+    .best-card .bc-row { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-top:6px; }
+    .best-card .bc-price { font-size:30px; font-weight:800; color:var(--best); line-height:1; font-variant-numeric:tabular-nums; }
+    .best-card .bc-where { font-size:13px; color:var(--muted); margin-top:3px; }
+    .best-card .bc-where b { color:var(--text); }
+
+    /* product card (every matching variant/size) */
+    .prod { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:11px 13px; margin-top:9px; box-shadow:var(--shadow); }
+    .prod-top { display:flex; align-items:center; gap:10px; }
+    .prod-info { flex:1 1 auto; min-width:0; }
+    .prod-name { font-size:14px; font-weight:700; line-height:1.25; }
+    .prod-sub { font-size:12.5px; color:var(--muted); margin-top:2px; }
+    .prod-sub b { color:var(--text); font-size:14px; }
+    .prod.promo .promo-pct { display:inline-block; background:var(--promo); color:#fff; font-size:11px; font-weight:800;
+      border-radius:6px; padding:1px 7px; margin-bottom:3px; }
+    .prod.promo .pp-retail { text-decoration:line-through; color:var(--muted); margin-right:6px; }
+    .prod-more { margin-top:9px; }
+    .prod-more summary { font-size:12px; color:var(--accent); font-weight:700; cursor:pointer; list-style:none; }
+    .prod-more summary::-webkit-details-marker { display:none; }
+    .prod-more summary::after { content:" ▾"; }
+    .prod-more[open] summary::after { content:" ▴"; }
+    .cmp-line { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px dashed var(--line); font-size:13px; }
+    .cmp-line:last-child { border-bottom:none; }
+    .cmp-line .cl-dot { width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+    .cmp-line .cl-chain { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .cmp-line .cl-price { font-weight:700; font-variant-numeric:tabular-nums; flex:0 0 auto; }
+    .cmp-line.best .cl-price { color:var(--best); }
+
+    .acts { display:flex; gap:7px; flex:0 0 auto; }
+    .a-btn { width:40px; height:40px; border-radius:11px; border:1px solid var(--line); background:var(--card); font-size:18px;
+      display:inline-flex; align-items:center; justify-content:center; line-height:1; }
+    .a-add { color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
+    .a-add.on { background:var(--accent); color:#fff; }
+    .a-fav { color:var(--pink); border-color:rgba(200,31,107,.4); background:rgba(200,31,107,.08); }
+    .a-fav.on { background:var(--pink); color:#fff; }
+    .a-btn:active { transform:scale(.9); }
+
+    .store-map { display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }
+    @media (max-width:680px) { .store-map { grid-template-columns:1fr; } }
+    .store-list { display:flex; flex-direction:column; gap:8px; }
+    .store-row { display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--line);
+      border-radius:12px; padding:10px 12px; box-shadow:var(--shadow); cursor:pointer; }
+    .store-row.is-best { border-color:var(--best); }
+    .store-row .sr-dot { width:11px; height:11px; border-radius:50%; flex:0 0 auto; }
+    .store-row .sr-mid { flex:1 1 auto; min-width:0; }
+    .store-row .sr-chain { font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .store-row .sr-prod { font-size:12px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .store-row .sr-dist { font-size:11.5px; color:var(--muted); }
+    .store-row .sr-price { font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
+    .store-row.is-best .sr-price { color:var(--best); }
+    .store-row .sr-badge { font-size:10px; font-weight:800; color:#fff; background:var(--best); border-radius:999px; padding:2px 7px; }
+    /* isolation:isolate scopes Leaflet's internal z-indexes (controls go up to 1000)
+       so they can't paint over the footer's Discord/subscribe buttons below the map. */
+    #map { height:340px; border-radius:14px; border:1px solid var(--line); box-shadow:var(--shadow); position:sticky; top:64px; isolation:isolate; z-index:0; }
+    @media (max-width:680px) { #map { height:280px; position:static; } }
+    .leaflet-popup-content { color:#111; }
+    .map-pop b { display:block; font-size:13px; }
+    .map-pop .mp-p { font-size:12px; color:#444; margin-top:2px; }
+    .store-hl { width:30px; height:30px; border-radius:50%; border:3px solid var(--hi); background:rgba(255,140,26,.18);
+      box-shadow:0 0 0 0 rgba(255,140,26,.6); animation:pulse 1.5s ease-out infinite;
+      display:flex; align-items:center; justify-content:center; }
+    .store-hl .hl-dot { width:13px; height:13px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 2px rgba(0,0,0,.4); }
+    @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,140,26,.55)} 70%{box-shadow:0 0 0 14px rgba(255,140,26,0)} 100%{box-shadow:0 0 0 0 rgba(255,140,26,0)} }
+
+    .empty { text-align:center; color:var(--muted); padding:34px 16px; font-size:14px; }
+    .empty .e-emoji { font-size:34px; display:block; margin-bottom:8px; }
+    .spinner { display:inline-block; width:18px; height:18px; border:2px solid var(--line); border-top-color:var(--accent);
+      border-radius:50%; animation:spin .7s linear infinite; vertical-align:-4px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .date-pill { font-size:10px; color:var(--muted); background:var(--accent-soft); border-radius:999px; padding:1px 7px; }
+
+    /* ---------- Floating basket + drawer ---------- */
+    .basket-fab { position:fixed; right:16px; bottom:calc(18px + env(safe-area-inset-bottom)); z-index:900;
+      display:inline-flex; align-items:center; gap:8px; background:var(--accent); color:#fff; border:none; border-radius:999px;
+      padding:14px 20px; font-size:15px; font-weight:700; box-shadow:0 6px 22px rgba(23,138,94,.4); }
+    .basket-fab .bf-badge { background:#fff; color:var(--accent); font-size:12px; font-weight:800; border-radius:999px;
+      min-width:20px; height:20px; padding:0 6px; display:inline-flex; align-items:center; justify-content:center; }
+    .basket-fab.empty .bf-badge { display:none; }
+
+    .sheet-back { position:fixed; inset:0; background:rgba(8,12,18,.5); z-index:950; opacity:0; pointer-events:none; transition:opacity .22s ease; }
+    .sheet-back.open { opacity:1; pointer-events:auto; }
+    .sheet { position:fixed; left:0; right:0; bottom:0; z-index:960; background:var(--bg); border-radius:20px 20px 0 0;
+      box-shadow:0 -8px 40px rgba(0,0,0,.3); max-height:86vh; overflow-y:auto; transform:translateY(101%);
+      transition:transform .28s cubic-bezier(.2,.7,.3,1); padding-bottom:calc(20px + env(safe-area-inset-bottom)); }
+    .sheet.open { transform:translateY(0); }
+    .sheet-inner { max-width:760px; margin:0 auto; padding:6px 16px 0; }
+    .sheet-grip { width:42px; height:5px; border-radius:999px; background:var(--line); margin:8px auto 4px; }
+    .sheet-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:6px 0 10px; }
+    .sheet-head h2 { font-size:18px; margin:0; }
+    .sheet-head .sh-actions { display:flex; align-items:center; gap:8px; }
+    .sheet-head .sh-share { border:1px solid var(--accent); background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:7px 13px; font-size:13px; font-weight:700; }
+    .sheet-head .sh-x { border:1px solid var(--line); background:var(--card); color:var(--muted); width:34px; height:34px; border-radius:50%; font-size:18px; }
+    /* shared-basket banner (arrived via a ?b= link) */
+    .shared-banner { display:flex; align-items:center; gap:10px; margin:10px 0 0; padding:10px 13px; border-radius:11px;
+      background:linear-gradient(135deg, var(--accent-soft), transparent); border:1px solid var(--accent); font-size:13px; }
+    .shared-banner .sb-text { flex:1 1 auto; min-width:0; }
+    .shared-banner a { color:var(--accent); font-weight:700; }
+    .shared-banner .sb-x { flex:0 0 auto; border:none; background:none; color:var(--muted); font-size:20px; line-height:1; padding:0 2px; }
+    /* toast */
+    #v2-toast { position:fixed; left:50%; bottom:calc(86px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(12px);
+      background:#0f1525; color:#fff; padding:11px 18px; border-radius:999px; font-size:13.5px; font-weight:600; box-shadow:0 6px 22px rgba(0,0,0,.3);
+      opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:1200; }
+    #v2-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .sheet-tabs { display:flex; gap:8px; margin:2px 0 12px; }
+    .sheet-tab { flex:1; text-align:center; border:1px solid var(--line); background:var(--card); color:var(--muted);
+      border-radius:11px; padding:11px; font-size:14px; font-weight:700; }
+    .sheet-tab.on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+    .pane { display:none; } .pane.on { display:block; }
+
+    .b-items { display:flex; flex-direction:column; gap:7px; margin-bottom:6px; }
+    .b-item { display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:11px; padding:9px 12px; }
+    .b-item .bi-emoji { flex:0 0 auto; font-size:18px; }
+    .b-item .bi-name { flex:1 1 auto; min-width:0; font-size:14.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .b-item .bi-price { flex:0 0 auto; font-weight:700; font-variant-numeric:tabular-nums; font-size:14px; }
+    .b-item .bi-price.miss { color:var(--warn); font-weight:600; font-size:12px; }
+    .b-item .bi-price.loading { color:var(--muted); }
+    .b-item .bi-fav { border:none; background:none; font-size:17px; color:var(--pink); flex:0 0 auto; padding:0 2px; opacity:.45; }
+    .b-item .bi-fav.on { opacity:1; }
+    .b-item .bi-x { border:none; background:transparent; color:var(--muted); font-size:20px; width:28px; flex:0 0 auto; }
+    .b-empty { color:var(--muted); font-size:13.5px; padding:6px 2px 12px; }
+    /* running total in the drawer (before comparing) */
+    .b-total-row { display:flex; justify-content:space-between; align-items:baseline; margin:10px 2px 2px; padding-top:10px; border-top:1px solid var(--line); font-size:14px; }
+    .b-total-row b { font-size:20px; font-weight:800; color:var(--best); font-variant-numeric:tabular-nums; }
+    .b-total-note { color:var(--muted); font-size:11.5px; margin:2px 2px 0; }
+    /* discount badge / struck retail price (basket views) */
+    .disc { color:var(--promo); font-weight:800; font-size:11px; background:rgba(210,59,59,.12); border-radius:5px; padding:1px 5px; white-space:nowrap; }
+    body.dark .disc { background:rgba(255,107,107,.16); }
+    .retail-old { text-decoration:line-through; color:var(--muted); font-size:11px; margin-right:5px; }
+    .approx-tag { color:var(--muted); font-weight:800; }
+    .approx-note { font-size:11.5px; color:var(--muted); margin:8px 2px 0; }
+
+    .favs-block { margin-top:16px; }
+    .favs-label { font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;
+      margin:0 2px 8px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .favs-label .fav-addall { text-transform:none; letter-spacing:0; font-size:12px; font-weight:700; color:var(--accent); background:none; border:none; }
+    .fav-chips { display:flex; flex-direction:column; gap:7px; }
+    .fav-chip { display:flex; align-items:center; gap:9px; background:rgba(200,31,107,.06); border:1px solid rgba(200,31,107,.25);
+      border-radius:11px; padding:9px 12px; }
+    .fav-chip .fc-emoji { flex:0 0 auto; font-size:17px; }
+    .fav-chip .fc-name { flex:1 1 auto; min-width:0; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .fav-chip .fc-add { flex:0 0 auto; border:1px solid var(--accent); background:var(--accent-soft); color:var(--accent);
+      border-radius:9px; font-size:13px; font-weight:700; padding:6px 11px; }
+    .fav-chip .fc-add.on { background:var(--accent); color:#fff; }
+    .fav-chip .fc-del { flex:0 0 auto; color:var(--muted); font-size:18px; border:none; background:none; padding:0 2px; }
+    .fav-empty { color:var(--muted); font-size:13px; }
+    /* push opt-in */
+    .push-opt { background:linear-gradient(135deg, rgba(255,140,26,.10), transparent); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:14px; }
+    .push-opt .po-title { font-size:14px; font-weight:700; }
+    .push-opt .po-state { color:var(--accent); }
+    .push-opt .po-desc { font-size:12px; color:var(--muted); margin:4px 0 10px; line-height:1.45; }
+    .push-opt button { border-radius:10px; padding:10px 15px; font-size:13.5px; font-weight:700; }
+    .push-opt .po-on { background:var(--accent); color:#fff; border:none; }
+    .push-opt .po-off { background:var(--card); color:var(--accent); border:1px solid var(--accent); }
+    .cmp-btn { width:100%; margin-top:16px; border:none; background:var(--accent); color:#fff; font-weight:800; font-size:16px;
+      border-radius:13px; padding:15px; box-shadow:0 4px 18px rgba(23,138,94,.3); }
+    .cmp-btn:disabled { opacity:.5; }
+
+    /* basket comparison (rendered in main area) */
+    .b-winner { background:var(--best-bg); border:1px solid var(--best); border-radius:14px; padding:14px 16px; }
+    .b-winner .bw-tag { font-size:11px; font-weight:800; color:var(--best); text-transform:uppercase; letter-spacing:.05em; }
+    .b-winner .bw-name { font-size:18px; font-weight:800; margin:3px 0; }
+    .b-winner .bw-total { font-size:26px; font-weight:800; color:var(--best); font-variant-numeric:tabular-nums; }
+    .b-winner .bw-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+    .b-break { margin-top:10px; display:grid; grid-template-columns:1fr auto; gap:3px 10px; font-size:13px; }
+    .b-break .bk-name { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .b-break .bk-name b { color:var(--text); }
+    .b-break .bk-price { font-variant-numeric:tabular-nums; text-align:right; }
+    .b-break .bk-miss { color:var(--warn); }
+    .b-split { margin-top:14px; background:var(--card); border:1px solid var(--line); border-radius:13px; padding:13px 15px; }
+    .b-split .bs-tag { font-size:11px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:.04em; }
+    .b-split .bs-total { font-size:18px; font-weight:800; }
+    .b-split .bs-save { color:var(--accent); font-size:13px; font-weight:700; }
+    .b-split .bs-line { display:flex; justify-content:space-between; gap:8px; padding:5px 0; border-bottom:1px dashed var(--line); font-size:13px; }
+    .b-split .bs-line:last-child { border-bottom:none; }
+    .b-split .bs-line .bsl-shop { color:var(--accent); font-size:11px; }
+    /* savings headline + per-store comparison cards */
+    .b-headline { background:linear-gradient(135deg, var(--accent-soft), transparent); border:1px solid var(--line);
+      border-radius:13px; padding:13px 15px; font-size:14px; }
+    .b-headline .bh-save { font-size:20px; font-weight:800; color:var(--best); }
+    .b-headline .bh-range { color:var(--muted); font-size:12.5px; margin-top:2px; }
+    .cmp-store { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:11px 13px; margin-top:9px; box-shadow:var(--shadow); }
+    .cmp-store.best { border-color:var(--best); }
+    .cs-head { display:flex; align-items:center; gap:10px; cursor:pointer; }
+    .cs-head:active { opacity:.7; }
+    .cs-dot { width:11px; height:11px; border-radius:50%; flex:0 0 auto; }
+    .cs-info { flex:1 1 auto; min-width:0; }
+    .cs-chain { font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .cs-meta { font-size:11.5px; color:var(--muted); }
+    .cs-right { flex:0 0 auto; text-align:right; }
+    .cs-total { font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; }
+    .cmp-store.best .cs-total { color:var(--best); }
+    .cs-diff { font-size:11px; color:var(--warn); font-weight:700; }
+    .cs-best { font-size:11px; color:var(--best); font-weight:800; }
+    .cs-partial { font-size:11px; color:var(--muted); font-weight:600; }
+    .cs-more { margin-top:8px; }
+    .cs-more summary { font-size:12px; color:var(--accent); font-weight:700; cursor:pointer; list-style:none; }
+    .cs-more summary::-webkit-details-marker { display:none; }
+    .cs-more summary::after { content:" ▾"; } .cs-more[open] summary::after { content:" ▴"; }
+    .cs-line { display:flex; justify-content:space-between; gap:8px; padding:5px 0; border-bottom:1px dashed var(--line); font-size:12.5px; }
+    .cs-line:last-child { border-bottom:none; }
+    .cs-line .csl-miss { color:var(--warn); }
+
+    /* ---------- Footer ---------- */
+    .site-foot { position:relative; z-index:1; background:var(--bg); margin-top:30px; border-top:1px solid var(--line); padding:22px 14px calc(26px + env(safe-area-inset-bottom)); text-align:center; color:var(--muted); font-size:12px; }
+    .site-foot .foot-cta { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:14px; }
+    .foot-cta a, .foot-cta button { border-radius:999px; padding:9px 15px; font-size:13px; font-weight:700; text-decoration:none; border:1px solid var(--line); cursor:pointer; }
+    .foot-discord { background:#5865F2; color:#fff !important; border-color:#5865F2 !important; }
+    .foot-sub { background:var(--accent); color:#fff; border-color:transparent; }
+    .foot-fb { background:var(--card); color:var(--text); }
+    .foot-score { display:block; margin:-4px auto 14px; background:none; border:none; color:var(--muted); font:inherit; font-size:12.5px; cursor:pointer; }
+    .foot-score b { color:var(--text); font-size:14px; }
+    .foot-score .fs-stars { color:#f5b342; letter-spacing:1px; }
+    .foot-links { display:flex; gap:6px 10px; flex-wrap:wrap; justify-content:center; align-items:center; margin-bottom:10px; }
+    .foot-links a, .foot-link { color:var(--muted); text-decoration:underline; background:none; border:none; cursor:pointer; font:inherit; padding:0; }
+    .foot-links a:hover, .foot-link:hover { color:var(--accent); }
+    .foot-meta { font-size:11px; line-height:1.5; }
+    .foot-meta a { color:var(--muted); }
+    .foot-fine { font-size:10.5px; opacity:.75; margin-top:8px; }
+    .foot-fine a { color:var(--accent); }
+
+    /* ---------- Modal (FAQ / feedback / subscribe) ---------- */
+    .modal { position:fixed; inset:0; z-index:1500; display:none; align-items:flex-start; justify-content:center; background:rgba(8,12,18,.55); padding:24px 12px; overflow-y:auto; }
+    .modal.open { display:flex; }
+    .modal-card { background:var(--card); border:1px solid var(--line); border-radius:16px; max-width:560px; width:100%; padding:18px; margin:auto; box-shadow:0 16px 50px rgba(0,0,0,.4); text-align:left; }
+    .modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:10px; }
+    .modal-head h2 { font-size:18px; margin:0; }
+    .modal-x { border:1px solid var(--line); background:var(--card); color:var(--muted); width:34px; height:34px; border-radius:50%; font-size:18px; flex:0 0 auto; }
+    .modal-intro { font-size:13px; color:var(--muted); margin:0 0 12px; }
+    .faq-q { border:1px solid var(--line); border-radius:11px; margin-bottom:8px; }
+    .faq-q summary { cursor:pointer; padding:11px 14px; font-weight:700; font-size:14px; list-style:none; display:flex; justify-content:space-between; gap:10px; }
+    .faq-q summary::-webkit-details-marker { display:none; }
+    .faq-q summary::after { content:"＋"; color:var(--accent); font-weight:800; }
+    .faq-q[open] summary::after { content:"－"; }
+    .faq-a { padding:0 14px 13px; font-size:13px; color:var(--muted); line-height:1.55; }
+    .faq-a b { color:var(--text); }
+    /* feedback */
+    .fb-cats { display:flex; gap:6px; flex-wrap:wrap; margin:4px 0 12px; }
+    .fb-cat { border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:8px 12px; font-size:12.5px; font-weight:600; }
+    .fb-cat.on { background:var(--accent); color:#fff; border-color:transparent; }
+    .fb-stars { display:flex; gap:4px; font-size:26px; margin:2px 0 12px; }
+    .fb-stars span { color:var(--line); cursor:pointer; }
+    .fb-stars span.lit { color:#f5b342; }
+    .modal-card textarea, .modal-card input[type=text], .modal-card input[type=email] { width:100%; border:1px solid var(--line); background:var(--bg); color:var(--text); border-radius:10px; padding:11px 12px; font:14px/1.4 inherit; margin-top:8px; }
+    .modal-card textarea { resize:vertical; }
+    .modal-btn { width:100%; margin-top:12px; border:none; background:var(--accent); color:#fff; font-weight:800; font-size:15px; border-radius:12px; padding:14px; }
+    .modal-btn:disabled { opacity:.5; }
+    .modal-msg { margin-top:10px; font-size:13px; padding:9px 11px; border-radius:9px; display:none; }
+    .modal-msg.ok { display:block; background:var(--accent-soft); color:var(--accent); }
+    .modal-msg.err { display:block; background:rgba(200,31,107,.12); color:var(--pink); }
+    .sub-loc { font-size:12px; color:var(--muted); margin-top:8px; display:flex; align-items:center; gap:5px; }
+    .sub-savings { background:linear-gradient(135deg, var(--accent-soft), transparent); border:1px solid var(--accent); border-radius:11px; padding:11px 13px; font-size:13.5px; margin-bottom:4px; }
+    .sub-savings:empty { display:none; }
+    .sub-savings b { color:var(--accent); font-size:16px; }
+
+    /* ---------- Scroll-triggered subscribe nudge ---------- */
+    .nudge { position:fixed; left:12px; bottom:calc(86px + env(safe-area-inset-bottom)); width:300px; max-width:calc(100vw - 24px);
+      background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px 13px; box-shadow:0 10px 34px rgba(0,0,0,.28);
+      z-index:880; transform:translateY(14px); opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; }
+    .nudge.show { opacity:1; transform:translateY(0); pointer-events:auto; }
+    .nudge .nudge-x { position:absolute; top:7px; right:9px; border:none; background:none; color:var(--muted); font-size:18px; cursor:pointer; }
+    .nudge .nudge-emoji { font-size:20px; }
+    .nudge .nudge-title { font-weight:800; font-size:14.5px; margin:3px 0 2px; }
+    .nudge .nudge-desc { font-size:12px; color:var(--muted); line-height:1.4; margin-bottom:10px; }
+    .nudge .nudge-cta { border:none; background:var(--accent); color:#fff; font-weight:700; border-radius:10px; padding:9px 14px; font-size:13px; cursor:pointer; }
+    @media (max-width:480px) { .nudge { left:8px; right:8px; width:auto; } }
+
+    /* Small version title at the very top — just text; becomes a clickable update
+       link only when a newer version exists (no banner popping up). */
+    .ver-strip { text-align:center; font-size:10.5px; color:var(--muted); padding:5px 12px 0; }
+    .ver-strip.update { color:var(--accent); font-weight:700; cursor:pointer; text-decoration:underline; }
+    /* version line in footer */
+    .foot-ver { font-size:11px; margin:10px 0 2px; }
+    .foot-ver button { background:none; border:none; color:var(--accent); font:inherit; font-weight:700; cursor:pointer; text-decoration:underline; padding:0; }
+    .chg-list { margin:6px 0 0; padding-left:18px; } .chg-list li { margin-bottom:5px; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <div class="top-row">
+        <a href="/v2.html" class="brand" aria-label="Количка — начало">🛒<span class="brand-name"> Количка</span></a>
+        <div class="ver-seg" role="group" aria-label="Превключи изглед">
+          <a href="/classic.html" class="vs" title="Върни се към класическия изглед">Класически</a>
+          <span class="vs vs-on" title="Текущ изглед">Ново</span>
+        </div>
+        <span class="top-spacer"></span>
+        <button class="icon-btn" id="favs-btn" type="button" title="Любими" aria-label="Любими">❤️</button>
+        <button class="icon-btn" id="theme-btn" type="button" title="Тема" aria-label="Тема">🌙</button>
+      </div>
+
+      <!-- Location: own full-width row so it's easy to read & tap -->
+      <button class="loc-chip" id="loc-chip" type="button">
+        <span class="lc-pin">📍</span>
+        <span class="lc-text" id="loc-text">Намери магазини…</span>
+        <span class="lc-cog">⚙︎ Локация и филтри</span>
+      </button>
+
+      <!-- Location + radius + chain filters -->
+      <div class="ctrl" id="ctrl">
+        <div class="cl-lbl">Локация</div>
+        <div class="loc-row">
+          <input id="loc-q" type="search" autocomplete="off" placeholder="град или адрес…" />
+          <button class="loc-mine" id="loc-mine" type="button">📍 моята</button>
+          <div class="loc-suggest" id="loc-suggest"></div>
+        </div>
+        <div class="cl-lbl">Радиус на търсене</div>
+        <div class="seg" id="radius-seg">
+          <button data-r="1">1 км</button><button data-r="3">3 км</button>
+          <button data-r="5">5 км</button><button data-r="10">10 км</button>
+        </div>
+        <div class="cl-lbl">Вериги за сравнение</div>
+        <div class="chain-chips" id="chain-chips"><span class="fav-empty">избери локация…</span></div>
+        <div class="chain-actions">
+          <button id="chain-all" type="button">Всички</button>
+          <button id="chain-none" type="button">Изчисти</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="shared-banner" id="shared-banner" hidden>
+      <span class="sb-text">📨 Това е <b>споделена кошница</b>. Отвори 🧺 Кошница, за да я сравниш с цените около теб, или <a href="#" id="shared-new">започни нова</a>.</span>
+      <button class="sb-x" id="shared-x" type="button" aria-label="Скрий">×</button>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <span class="si-mag">🔍</span>
+        <input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="Търси продукт — мляко, хляб, вино…" />
+        <button class="si-clear" id="q-clear" type="button" hidden aria-label="Изчисти">✕</button>
+        <button class="si-go" id="q-go" type="button">Търси</button>
+      </div>
+      <div class="ac" id="ac"></div>
+    </div>
+
+    <div class="groups" id="groups"></div>
+    <div class="subcats" id="subcats"></div>
+    <div id="results"></div>
+  </main>
+
+  <button class="basket-fab empty" id="basket-fab" type="button">🧺 Кошница <span class="bf-badge" id="bf-badge">0</span></button>
+
+  <div class="sheet-back" id="sheet-back"></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Кошница">
+    <div class="sheet-inner">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head">
+        <h2 id="sheet-title">🧺 Моята кошница</h2>
+        <div class="sh-actions">
+          <button class="sh-share" id="share-basket-btn" type="button">📤 Сподели</button>
+          <button class="sh-x" id="sheet-x" type="button" aria-label="Затвори">✕</button>
+        </div>
+      </div>
+      <div class="sheet-tabs">
+        <button class="sheet-tab on" id="tab-basket" type="button" data-pane="basket">🧺 Кошница (<span id="cnt-basket">0</span>)</button>
+        <button class="sheet-tab" id="tab-favs" type="button" data-pane="favs">❤️ Любими (<span id="cnt-favs">0</span>)</button>
+      </div>
+
+      <div class="pane on" id="pane-basket">
+        <div class="b-items" id="b-items"></div>
+        <div id="b-total"></div>
+        <button class="cmp-btn" id="cmp-btn" type="button">Сравни по магазини →</button>
+      </div>
+
+      <div class="pane" id="pane-favs">
+        <div class="push-opt" id="push-opt" hidden></div>
+        <div class="favs-label">
+          <span>Продуктите, които купуваш редовно</span>
+          <button class="fav-addall" id="fav-addall" type="button">+ добави всички в кошницата</button>
+        </div>
+        <div class="fav-chips" id="fav-chips"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-foot">
+    <div class="foot-cta">
+      <a class="foot-discord" id="discord-link" href="#" target="_blank" rel="noopener">💬 Discord</a>
+      <button class="foot-sub" id="open-sub" type="button">📨 Абонирай се за промоции</button>
+      <button class="foot-fb" id="open-fb" type="button">📣 Обратна връзка</button>
+    </div>
+    <button class="foot-score" id="foot-score" type="button" hidden></button>
+    <div class="foot-links">
+      <button class="foot-link" id="open-faq" type="button">❓ Често задавани въпроси</button>
+      <a href="/terms.html">Общи условия</a>
+      <a href="/privacy.html">Поверителност</a>
+      <a id="feedback-email" href="#">feedback</a>
+    </div>
+    <div class="foot-meta" id="foot-stats">Цените се обновяват ежедневно от <a id="datasource-link" href="#" target="_blank" rel="noopener">kolkostruva.bg</a> · карти © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
+    <div class="foot-ver">Версия <b id="foot-version">…</b> <button id="open-changelog" type="button" hidden></button> · <button id="open-howupdate" type="button">обнови приложението</button></div>
+    <div class="foot-fine"><a href="/classic.html">← класически изглед</a> · Цените са ориентировъчни — проверявай на място.</div>
+  </footer>
+
+  <!-- Changelog modal -->
+  <div class="modal" id="changelog-modal" role="dialog" aria-modal="true" aria-label="Какво е новото">
+    <div class="modal-card">
+      <div class="modal-head"><h2>🆕 Какво е новото</h2><button class="modal-x" data-close type="button" aria-label="Затвори">✕</button></div>
+      <p class="modal-intro">Версия <b id="chg-version">…</b> · <span id="chg-date"></span></p>
+      <ul class="chg-list" id="chg-list"></ul>
+    </div>
+  </div>
+
+  <!-- How-to-update modal (for installed app icons that don't auto-update) -->
+  <div class="modal" id="howupdate-modal" role="dialog" aria-modal="true" aria-label="Как да обновя приложението">
+    <div class="modal-card">
+      <div class="modal-head"><h2>🔄 Как да обновя приложението</h2><button class="modal-x" data-close type="button" aria-label="Затвори">✕</button></div>
+      <p class="modal-intro">Ако сайтът е отворен в браузър — просто <b>презареди страницата</b> (или натисни „Обнови" в лентата горе). Ако си го <b>добавил като икона</b> на телефона/десктопа, понякога трябва ръчно обновяване:</p>
+      <ul class="chg-list">
+        <li><b>📱 iPhone (икона на началния екран):</b> затвори приложението напълно (плъзни нагоре от мултитаскинга) и го отвори отново. При нужда — задръж иконата → „Премахни" и добави сайта пак от Safari.</li>
+        <li><b>🤖 Android (икона/PWA):</b> затвори и отвори пак; или меню ⋮ → „Обнови". При нужда — премахни иконата и я добави отново.</li>
+        <li><b>💻 Десктоп (Chrome/Edge като приложение):</b> меню ⋮ в прозореца → „Презареди", или затвори и отвори. При нужда — деинсталирай (⋮ → „Деинсталирай Количка") и инсталирай пак.</li>
+        <li><b>🌐 В браузър:</b> Ctrl/⌘ + Shift + R (твърдо презареждане).</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FAQ modal -->
+  <div class="modal" id="faq-modal" role="dialog" aria-modal="true" aria-label="Често задавани въпроси">
+    <div class="modal-card">
+      <div class="modal-head"><h2>❓ Често задавани въпроси</h2><button class="modal-x" data-close type="button" aria-label="Затвори">✕</button></div>
+      <p class="modal-intro">Кратко ръководство какво е „Количка" и как да го ползваш.</p>
+      <details class="faq-q" open><summary>Какво е „Количка"?</summary><div class="faq-a">Безплатно приложение, което сравнява цените на хранителни и битови стоки в магазините около теб — показва къде даден продукт е най-евтин и колко струва цялата ти кошница във всяка верига.</div></details>
+      <details class="faq-q"><summary>Как намирам най-евтиното за един продукт?</summary><div class="faq-a">Просто напиши името в търсачката (напр. „мляко", „хляб", „вино") или избери група. Най-горе се показва <b>най-ниската цена около теб</b>, а отдолу — цените по магазини и на картата.</div></details>
+      <details class="faq-q"><summary>Как работи кошницата?</summary><div class="faq-a">Добавяй продукти с <b>+</b>, после натисни <b>„Сравни по магазини"</b>. Показваме общата сума във всеки магазин, най-евтината комбинация (раздели по магазини) и колко спестяваш.</div></details>
+      <details class="faq-q"><summary>Какво е „≈" при кошницата?</summary><div class="faq-a">Когато точният артикул липсва в даден магазин, показваме <b>най-близкия продукт от същата категория</b> (марка/грамаж/масленост), за да е сравнима цялата кошница.</div></details>
+      <details class="faq-q"><summary>Как да задам локацията си?</summary><div class="faq-a">Натисни 📍 чипа горе → въведи град/адрес или избери „моята локация". Оттам нагласяш и <b>радиуса</b> и кои <b>вериги</b> да се сравняват.</div></details>
+      <details class="faq-q"><summary>Какво са „Любими" и известията?</summary><div class="faq-a">Маркирай продукти с ♡, за да ги зареждаш бързо. Включи <b>известия</b> и ще ти пишем (до 3 пъти на ден), когато любим продукт е намален близо до теб — дори при заспал телефон. При натискане известието те отвежда директно до търсенето за този продукт.</div></details>
+      <details class="faq-q"><summary>Как да включа известия за намаления? (Android / iPhone)</summary><div class="faq-a">
+        <b>📱 Android (Chrome):</b><br/>1) Отвори сайта в Chrome.<br/>2) Намести локацията си (📍 горе) и маркирай любими продукти с ♡.<br/>3) Бутон <b>🧺 Кошница → таб ❤️ Любими → „🔔 Включи известията"</b> → <b>Разреши</b>.<br/>Това е достатъчно — работи и при заключен телефон/затворен браузър.<br/><br/>
+        <b>🍎 iPhone / iPad (iOS 16.4+):</b> Apple позволява известия само за инсталирано приложение:<br/>1) Отвори сайта в <b>Safari</b>.<br/>2) Бутон <b>Сподели</b> (квадратчето със стрелка) → <b>„Към началния екран"</b>.<br/>3) Отвори приложението <b>от иконата на началния екран</b> (не от Safari).<br/>4) <b>🧺 Кошница → ❤️ Любими → „🔔 Включи известията"</b> → <b>Разреши</b>.<br/><br/>
+        Ако бутонът пише, че браузърът не поддържа известия — на iPhone не си отворил сайта от иконата на началния екран. Известията тръгват автоматично в 09:30, 13:30 и 18:30 ч., само когато има реално намаление на твой любим продукт наблизо.
+      </div></details>
+      <details class="faq-q"><summary>Колко често се обновяват цените?</summary><div class="faq-a">Ежедневно — от публично достъпни данни на търговските вериги. До всяка цена пише и датата на последно обновяване.</div></details>
+      <details class="faq-q"><summary>Точни ли са цените?</summary><div class="faq-a">Цените са <b>ориентировъчни</b> и може да се различават в конкретния магазин (промоции, наличности, региони). Винаги проверявай на място.</div></details>
+    </div>
+  </div>
+
+  <!-- Feedback modal -->
+  <div class="modal" id="fb-modal" role="dialog" aria-modal="true" aria-label="Обратна връзка">
+    <div class="modal-card">
+      <div class="modal-head"><h2>📣 Обратна връзка</h2><button class="modal-x" data-close type="button" aria-label="Затвори">✕</button></div>
+      <p class="modal-intro">Имаш мнение, грешка или похвала? Сподели — четем всичко.</p>
+      <div class="fb-cats" id="fb-cats">
+        <button type="button" class="fb-cat" data-cat="bug">🐛 Бъг</button>
+        <button type="button" class="fb-cat" data-cat="product">📦 Грешен продукт/цена</button>
+        <button type="button" class="fb-cat" data-cat="suggestion">💡 Предложение</button>
+        <button type="button" class="fb-cat" data-cat="praise">🌟 Похвала</button>
+      </div>
+      <div class="fb-stars" id="fb-stars" role="radiogroup" aria-label="Оценка 1-5">
+        <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+      </div>
+      <input id="fb-subject" type="text" maxlength="200" placeholder="Кратко заглавие (по избор)" />
+      <textarea id="fb-comment" rows="4" maxlength="4000" placeholder="Опиши какво се случи / какво искаш да видиш"></textarea>
+      <div class="modal-msg" id="fb-msg"></div>
+      <button class="modal-btn" id="fb-send" type="button">Изпрати</button>
+    </div>
+  </div>
+
+  <!-- Subscribe modal -->
+  <div class="modal" id="sub-modal" role="dialog" aria-modal="true" aria-label="Абонамент за промоции">
+    <div class="modal-card">
+      <div class="modal-head"><h2>📨 Промоции по имейл</h2><button class="modal-x" data-close type="button" aria-label="Затвори">✕</button></div>
+      <p class="modal-intro">Веднъж седмично ти пращаме най-добрите намаления около теб. Без спам — отписваш се с един клик.</p>
+      <div class="sub-savings" id="sub-savings"></div>
+      <input id="sub-email" type="email" inputmode="email" autocomplete="email" placeholder="твоят@имейл.bg" />
+      <div class="sub-loc" id="sub-loc"></div>
+      <div class="modal-msg" id="sub-msg"></div>
+      <button class="modal-btn" id="sub-send" type="button">Абонирай се</button>
+    </div>
+  </div>
+
+  <!-- Fav-click → enable push funnel (separate from the email subscribe) -->
+  <div class="modal" id="pushprompt-modal" role="dialog" aria-modal="true" aria-label="Известия за намаление">
+    <div class="modal-card">
+      <div class="modal-head"><h2>🔔 Да те известим при намаление?</h2><button class="modal-x" data-close type="button" aria-label="Затвори">✕</button></div>
+      <p class="modal-intro">Добави го в любими ✓ Сега включи <b>известия</b> и ще ти пишем, щом този продукт е на промоция близо до теб — до 3 пъти на ден, без спам (дори при заспал телефон).</p>
+      <div class="sub-savings" id="pushprompt-save"></div>
+      <button class="modal-btn" id="push-prompt-on" type="button">🔔 Включи известията</button>
+      <button class="modal-btn" id="push-prompt-no" type="button" data-close style="background:var(--card);color:var(--muted);border:1px solid var(--line);margin-top:8px">Не сега</button>
+    </div>
+  </div>
+
+  <!-- Scroll-triggered subscribe nudge -->
+  <div class="nudge" id="sub-nudge">
+    <button class="nudge-x" id="nudge-x" type="button" aria-label="Скрий">×</button>
+    <div class="nudge-emoji">💰</div>
+    <div class="nudge-title" id="nudge-title">Хващай намаленията навреме</div>
+    <div class="nudge-desc" id="nudge-desc">Седмично най-добрите промоции около теб — безплатно.</div>
+    <button class="nudge-cta" id="nudge-cta" type="button">Абонирай се безплатно</button>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (s, r) => (r || document).querySelector(s);
+  const esc = (s) => String(s == null ? '' : s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+  const eur = (n) => Number(n).toFixed(2) + ' €';
+  const discPct = (price, retail) => (retail && price != null && price < retail - 0.005) ? Math.round((1 - price/retail) * 100) : 0;
+  const discBadge = (price, retail) => { const p = discPct(price, retail); return p ? ` <span class="disc">−${p}%</span>` : ''; };
+
+  const CHAIN_COLOR = { kaufland:'#2c7be5', lidl:'#f0b46a', fantastico1:'#5dd3a8', fantastico2:'#5dd3a8',
+    billa:'#d6a32a', kam:'#6b46c1', metro:'#0ea5e9', tmarket:'#7c3aed' };
+  function chainColor(slug) { slug = slug || '';
+    if (CHAIN_COLOR[slug]) return CHAIN_COLOR[slug];
+    let h = 0; for (let i=0;i<slug.length;i++) h = ((h<<5)-h+slug.charCodeAt(i))|0;
+    return `hsl(${50 + (Math.abs(h)%270)}, 62%, 45%)`; }
+  function fmtDate(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('bg-BG',{day:'2-digit',month:'2-digit'}); } catch(_) { return ''; } }
+
+  const _UNIT = new Set(['г','гр','грама','кг','мл','л','бр','броя','бр.','g','kg','ml','l','x','х']);
+  function cleanName(s) {
+    const out = String(s == null ? '' : s).replace(/\([^)]*\)/g, ' ').split(/\s+/).filter(t => {
+      const w = t.replace(/[.,]/g, '').toLowerCase();
+      if (!w) return false; if (/^\d/.test(w)) return false; if (w.endsWith('%')) return false; if (_UNIT.has(w)) return false; return true;
+    }).join(' ').trim();
+    return out || String(s).trim();
+  }
+
+  const state = {
+    loc: null, radius: +(localStorage.getItem('kolichka.v2.radius') || 3),
+    cats: [], availChains: [], chainOff: new Set(loadArr('kolichka.v2.chainOff')),
+    basket: loadArr('kolichka.basket'), favorites: loadArr('kolichka.favorites'),
+    lastResult: null, mode: 'promos', activeGroup: null,
+    basketData: null, basketSig: null, basketLoading: false,
+  };
+  function loadArr(k) { try { const a = JSON.parse(localStorage.getItem(k) || '[]'); return Array.isArray(a) ? a.filter(x => typeof x === 'string') : []; } catch(_) { return []; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(_) {} }
+  let map = null, tileLayer = null, markerLayer = null;  // declared early — applyTheme() touches `map`
+  const chainEnabled = (slug) => !state.chainOff.has(slug);
+
+  // "cat:cheese-white" (legacy/shared basket items) → readable label + emoji
+  function prettyItem(name) {
+    const raw = String(name || '');
+    if (raw.toLowerCase().startsWith('cat:')) { const c = state.cats.find(x => x.slug === raw.slice(4).toLowerCase()); if (c) return c.label; }
+    return raw;
+  }
+  function emojiFor(name) {
+    const raw = String(name || '');
+    if (raw.toLowerCase().startsWith('cat:')) { const c = state.cats.find(x => x.slug === raw.slice(4).toLowerCase()); if (c) return c.emoji || '🛒'; }
+    const n = raw.toLowerCase();
+    for (const c of state.cats) {
+      const al = [c.label, ...(c.aliases||[])].map(a => a.toLowerCase());
+      if (al.some(a => a && (n === a || n.includes(a) || a.includes(n)))) return c.emoji || '🛒';
+    }
+    return '🛒';
+  }
+
+  // ===================== THEME
+  function applyTheme(t) {
+    document.body.classList.toggle('dark', t === 'dark');
+    $('#theme-btn').textContent = t === 'dark' ? '☀️' : '🌙';
+    document.querySelector('meta[name=theme-color]').setAttribute('content', t === 'dark' ? '#0e1116' : '#178a5e');
+    if (map) drawTiles();
+  }
+  let theme = localStorage.getItem('kolichka.theme') || 'light';
+  applyTheme(theme);
+  $('#theme-btn').addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('kolichka.theme', theme); applyTheme(theme); });
+
+  // ===================== LOCATION + FILTERS PANEL
+  function setLoc(loc, opts) {
+    opts = opts || {};
+    state.loc = loc;
+    state.locProvisional = !!opts.provisional;
+    if (loc && !opts.provisional) save('kolichka.v2.loc', loc);  // don't persist a fallback centre
+    $('#loc-text').innerHTML = loc ? `до <b>${esc(loc.label || 'твоята локация')}</b> · ${state.radius} км${state.locProvisional ? ' · прибл.' : ''}` : 'Намери магазини…';
+    if (loc) { fetchChains(); if (opts.reverse) reverseArea(loc.lat, loc.lng); resyncPushIfOn(); fetchSavings(); }
+    refresh();
+  }
+  function reverseArea(lat, lng) {
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=14&accept-language=bg&lat=${lat}&lon=${lng}`, { headers:{'Accept':'application/json'} })
+      .then(r => r.json()).then(j => {
+        const a = j.address || {};
+        const area = a.suburb || a.neighbourhood || a.city_district || a.quarter || a.city || a.town || a.village || a.county;
+        if (area && state.loc) { state.loc.label = area; save('kolichka.v2.loc', state.loc); $('#loc-text').innerHTML = `до <b>${esc(area)}</b> · ${state.radius} км`; }
+      }).catch(() => {});
+  }
+  function ipFallback() {
+    // Approx location from the client IP (server GeoIP) for users whose device geolocation
+    // is denied/unavailable. NOTE: BG mobile carrier IPs often resolve to Sofia, so this is
+    // a last resort — precise GPS (below) is preferred.
+    fetch('/api/iploc', { cache: 'no-store' }).then(r => r.json()).then(j => {
+      state.locating = false;  // terminal fallback — stop the "locating" state either way
+      if (j && j.lat && state.locProvisional) { track('v2-geo-ip', {}); setLoc({ lat: j.lat, lng: j.lng, label: j.label || 'твоят регион' }, { provisional: true }); }
+      else refresh();
+    }).catch(() => { state.locating = false; refresh(); });
+  }
+  // Progressive GPS like v1: watchPosition with HIGH accuracy keeps improving the fix and
+  // re-centres on each better reading (a one-shot low-accuracy call returned a coarse,
+  // ~Sofia/IP-level position — the "stuck on Sofia after Allow" bug). Stops after ~15s.
+  function refineGeo() {
+    if (!navigator.geolocation) { ipFallback(); return; }
+    let best = Infinity, got = false, wid = null;
+    const stop = () => { if (wid !== null) { try { navigator.geolocation.clearWatch(wid); } catch (_) {} wid = null; } };
+    wid = navigator.geolocation.watchPosition(
+      p => {
+        const lat = p.coords.latitude, lng = p.coords.longitude, acc = p.coords.accuracy || 99999;
+        if (!lat || !lng || (Math.abs(lat) < 0.5 && Math.abs(lng) < 0.5)) return;  // ignore bogus 0,0
+        if (acc >= best) return;                                                    // ignore worse fixes
+        best = acc; got = true; state.locating = false;
+        setLoc({ lat, lng, label: 'твоята локация' }, { reverse: true });
+        if (!refineGeo._t) track('v2-geo-ok', {}), refineGeo._t = 1;
+        if (acc <= 100) stop();  // good enough → stop watching
+      },
+      (err) => { stop(); if (!got) { track('v2-geo-denied', { code: err && err.code }); ipFallback(); } },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+    setTimeout(() => { stop(); if (!got) ipFallback(); }, 15000);  // give up → IP fallback
+  }
+  function initLocation() {
+    let saved = null; try { saved = JSON.parse(localStorage.getItem('kolichka.v2.loc') || 'null'); } catch(_) {}
+    const isReal = saved && saved.lat && saved.label && saved.label !== 'София (центъра)';
+    // New visitor → gate the FIRST render to a "locating…" state (set BEFORE setLoc, which
+    // triggers the first refresh) so the initial paint is never Sofia-centre promos.
+    if (!isReal) state.locating = true;
+    // 1) Paint immediately on a provisional centre (saved spot, else Sofia) — never block.
+    if (saved && saved.lat) setLoc(saved, { provisional: !isReal });
+    else setLoc({ lat: 42.6977, lng: 23.3219, label: 'София (центъра)' }, { provisional: true });
+    if (isReal) {
+      // Returning user with a real location: don't re-prompt, but if they've ALREADY
+      // granted permission, silently refresh to their current position (like v1, which
+      // auto-locates on every load). New/ungranted users fall through to the prompt below.
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' }).then(st => { if (st.state === 'granted') refineGeo(); }).catch(() => {});
+      }
+      return;
+    }
+    // 2) Never hang on "locating" — clear after 6s if no fix arrived (then show best loc).
+    setTimeout(() => { if (state.locating) { state.locating = false; refresh(); } }, 6000);
+    // 3) Ask for precise location ON LOAD (prompt appears immediately). IP fallback fires
+    //    only if GPS is denied/unavailable (inside refineGeo) — so we never flash Sofia early.
+    refineGeo();
+    // 4) Fallback for browsers that suppress the on-load prompt (some iOS cases): retry on
+    //    the first user gesture while still provisional.
+    const evs = ['pointerdown', 'touchend', 'keydown'];
+    const onFirstGesture = () => { evs.forEach(e => window.removeEventListener(e, onFirstGesture)); if (state.locProvisional) refineGeo(); };
+    evs.forEach(e => window.addEventListener(e, onFirstGesture, { passive: true }));
+  }
+
+  $('#loc-chip').addEventListener('click', (e) => { e.stopPropagation(); $('#ctrl').classList.toggle('open'); });
+  // Hide the location/filters panel when clicking anywhere outside it.
+  document.addEventListener('click', (e) => {
+    const c = $('#ctrl'); if (!c.classList.contains('open')) return;
+    if (e.target.closest('#ctrl') || e.target.closest('#loc-chip')) return;
+    c.classList.remove('open');
+  });
+  // radius
+  function paintRadius() { [...$('#radius-seg').children].forEach(b => b.classList.toggle('on', +b.dataset.r === state.radius)); }
+  $('#radius-seg').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (!b) return;
+    state.radius = +b.dataset.r; save('kolichka.v2.radius', state.radius); paintRadius();
+    if (state.loc) { $('#loc-text').innerHTML = `до <b>${esc(state.loc.label||'')}</b> · ${state.radius} км`; fetchChains(); }
+    refresh(true); });
+  // location input (inline suggest — no popup)
+  let locTimer = null;
+  $('#loc-q').addEventListener('input', () => { clearTimeout(locTimer); const v = $('#loc-q').value.trim();
+    if (v.length < 2) { $('#loc-suggest').classList.remove('open'); return; }
+    locTimer = setTimeout(() => fetch('/api/geocode?q=' + encodeURIComponent(v)).then(r=>r.json()).then(arr => {
+      if (!Array.isArray(arr) || !arr.length) { $('#loc-suggest').classList.remove('open'); return; }
+      $('#loc-suggest').innerHTML = arr.slice(0,6).map((h,i)=>`<div data-i="${i}">${esc(h.display)}</div>`).join('');
+      $('#loc-suggest')._items = arr; $('#loc-suggest').classList.add('open');
+    }).catch(()=>{}), 350); });
+  $('#loc-suggest').addEventListener('mousedown', e => { const d = e.target.closest('[data-i]'); if (!d) return; e.preventDefault();
+    const h = $('#loc-suggest')._items[+d.dataset.i];
+    setLoc({ lat:h.lat, lng:h.lng, label:(h.display||'').split(',')[0] });
+    $('#loc-suggest').classList.remove('open'); $('#loc-q').value=''; });
+  $('#loc-mine').addEventListener('click', () => { if (!navigator.geolocation) return;
+    $('#loc-text').innerHTML = '<span class="spinner"></span>';
+    navigator.geolocation.getCurrentPosition(p => setLoc({ lat:p.coords.latitude, lng:p.coords.longitude, label:'твоята локация' }, { reverse:true }), () => setLoc(state.loc)); });
+
+  // chains
+  function fetchChains() {
+    if (!state.loc) return;
+    fetch(`/api/stores/nearby?lat=${state.loc.lat}&lng=${state.loc.lng}&radius_km=${state.radius}`).then(r=>r.json()).then(d => {
+      const seen = new Map();
+      (d.stores||[]).forEach(s => { if (!seen.has(s.chain_slug)) seen.set(s.chain_slug, s.chain_name); });
+      state.availChains = [...seen.entries()].map(([slug,name]) => ({ slug, name }));
+      paintChains();
+    }).catch(()=>{});
+  }
+  function paintChains() {
+    const el = $('#chain-chips');
+    if (!state.availChains.length) { el.innerHTML = '<span class="fav-empty">няма магазини в този радиус</span>'; return; }
+    el.innerHTML = state.availChains.map(c => `<button class="chain-chip${chainEnabled(c.slug)?' on':''}" data-slug="${esc(c.slug)}">
+      <span class="cc-dot" style="background:${chainColor(c.slug)}"></span>${esc(c.name)}</button>`).join('');
+  }
+  $('#chain-chips').addEventListener('click', e => { const b = e.target.closest('[data-slug]'); if (!b) return;
+    const s = b.dataset.slug; if (state.chainOff.has(s)) state.chainOff.delete(s); else state.chainOff.add(s);
+    save('kolichka.v2.chainOff', [...state.chainOff]); paintChains(); rerender(); });
+  $('#chain-all').addEventListener('click', () => { state.chainOff.clear(); save('kolichka.v2.chainOff', []); paintChains(); rerender(); });
+  $('#chain-none').addEventListener('click', () => { state.availChains.forEach(c => state.chainOff.add(c.slug)); save('kolichka.v2.chainOff', [...state.chainOff]); paintChains(); rerender(); });
+
+  // ===================== CATEGORY GROUPS (two-level) + AUTOCOMPLETE
+  const GROUPS = [
+    { key:'dairy',   label:'Млечни',               emoji:'🥛', slugs:['milk','yogurt','cheese-yellow','cheese-white','butter'] },
+    { key:'meat',    label:'Месо и риба',          emoji:'🥩', slugs:['meat','ground-meat','cold-cuts','chicken','pork','beef','fish'] },
+    { key:'produce', label:'Плодове и зеленчуци',  emoji:'🥗', slugs:['apple','banana','orange','lemon','apricot','cherries','strawberries','peach','pear','plum','grape','watermelon','melon','tomato','cucumber','potato','onion','cabbage','carrot','pepper','olives'] },
+    { key:'pantry',  label:'Основни',              emoji:'🍚', slugs:['eggs','bread','flour','sugar','rice','pasta','legumes','oil-sunflower','olive-oil'] },
+    { key:'sweets',  label:'Лакомства',            emoji:'🍫', slugs:['chocolate','biscuits'] },
+    { key:'drinks',  label:'Напитки',              emoji:'🍷', slugs:['coffee','tea','beer','wine','spirits','water','juice'] },
+    { key:'home',    label:'Дом и хигиена',        emoji:'🧼', slugs:['toilet-paper','wet-wipes','dishwash','home-clean','diapers'] },
+  ];
+  const catBySlug = (slug) => state.cats.find(c => c.slug === slug);
+
+  fetch('/api/categories').then(r => r.json()).then(list => { state.cats = Array.isArray(list) ? list : []; renderGroups(); renderSheet(); }).catch(()=>{});
+  function renderGroups() {
+    $('#groups').innerHTML = `<button class="group-chip promo${state.mode==='promos'?' active':''}" data-promos="1">🏷️ Промоции</button>` +
+      GROUPS.map(g => `<button class="group-chip${state.activeGroup===g.key?' active':''}" data-group="${g.key}">${g.emoji} ${esc(g.label)}</button>`).join('');
+    renderSubcats();
+  }
+  function renderSubcats() {
+    const el = $('#subcats');
+    if (!state.activeGroup) { el.innerHTML = ''; return; }
+    const g = GROUPS.find(x => x.key === state.activeGroup); if (!g) { el.innerHTML = ''; return; }
+    const cats = g.slugs.map(s => catBySlug(s)).filter(Boolean);
+    el.innerHTML = cats.map(c => `<button class="subcat" data-q="${esc((c.aliases&&c.aliases[0])||c.label)}">${c.emoji||''} ${esc(c.label)}</button>`).join('');
+  }
+  $('#groups').addEventListener('click', e => {
+    if (e.target.closest('[data-promos]')) { state.activeGroup = null; $('#q').value=''; $('#q-clear').hidden=true; showPromos(); return; }
+    const b = e.target.closest('[data-group]'); if (!b) return;
+    state.activeGroup = (state.activeGroup === b.dataset.group) ? null : b.dataset.group;
+    renderGroups();
+  });
+  $('#subcats').addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (!b) return; $('#q').value = b.dataset.q; runSearch(b.dataset.q); });
+
+  const ac = $('#ac'); let acSel = -1, acItems = [];
+  function buildAc(term) { term = term.toLowerCase().trim(); if (!term) return [];
+    const out = []; for (const c of state.cats) { const hay = [c.label, ...(c.aliases||[])];
+      if (hay.some(a => a.toLowerCase().includes(term))) out.push({ emoji:c.emoji, label:c.label, q:(c.aliases&&c.aliases[0])||c.label }); if (out.length>=8) break; } return out; }
+  function showAc(term) { acItems = buildAc(term); acSel = -1; if (!acItems.length) { ac.classList.remove('open'); return; }
+    ac.innerHTML = acItems.map((it,i)=>`<div data-i="${i}"><span>${it.emoji||'🔍'}</span><span>${esc(it.label)}</span></div>`).join(''); ac.classList.add('open'); }
+  function hideAc() { ac.classList.remove('open'); }
+  ac.addEventListener('mousedown', e => { const d = e.target.closest('[data-i]'); if (!d) return; e.preventDefault();
+    const it = acItems[+d.dataset.i]; $('#q').value = it.q; hideAc(); runSearch(it.q); });
+  const qIn = $('#q');
+  qIn.addEventListener('input', () => { $('#q-clear').hidden = !qIn.value; showAc(qIn.value); });
+  qIn.addEventListener('keydown', e => {
+    if (!ac.classList.contains('open')) { if (e.key==='Enter') { hideAc(); runSearch(qIn.value); } return; }
+    if (e.key==='ArrowDown') { e.preventDefault(); acSel=Math.min(acSel+1,acItems.length-1); paintAc(); }
+    else if (e.key==='ArrowUp') { e.preventDefault(); acSel=Math.max(acSel-1,0); paintAc(); }
+    else if (e.key==='Enter') { e.preventDefault(); if (acSel>=0) qIn.value=acItems[acSel].q; hideAc(); runSearch(qIn.value); }
+    else if (e.key==='Escape') hideAc();
+  });
+  function paintAc() { [...ac.children].forEach((c,i)=>c.classList.toggle('sel', i===acSel)); }
+  qIn.addEventListener('blur', () => setTimeout(hideAc, 150));
+  $('#q-clear').addEventListener('click', () => { qIn.value=''; $('#q-clear').hidden=true; hideAc(); showPromos(); qIn.focus(); });
+  $('#q-go').addEventListener('click', () => { hideAc(); runSearch(qIn.value); });
+
+  // ===================== refresh helpers
+  function refresh(force) {
+    // While we're still getting a precise location, show a "locating" state instead of
+    // Sofia-centre promos — those 2-3s of wrong-city data are misleading. Explicit user
+    // searches still go through (they call runSearch directly, not refresh).
+    if (state.locating) { renderLocating(); return; }
+    const q = $('#q').value.trim();
+    if (state.mode === 'search' && q) runSearch(q, force);
+    else showPromos();
+  }
+  function renderLocating() {
+    renderGroups();
+    $('#results').innerHTML = `<div class="empty"><span class="spinner"></span> 📍 Намирам те…<br/><span style="font-size:12px;color:var(--muted)">Търся най-добрите оферти близо до теб</span></div>`;
+  }
+  function rerender() { // re-render current data after a chain-filter change, no refetch
+    if (state.mode === 'search' && state.lastResult) renderResults(state.lastResult, $('#q').value.trim());
+    else if (state.mode === 'promos' && state._promoData) renderPromos(state._promoData);
+  }
+
+  // ===================== SEARCH
+  let abort = null;
+  function runSearch(q, force) {
+    q = (q||'').trim(); if (!q) return;
+    state.mode = 'search'; renderGroups();
+    if (!state.loc) { $('#results').innerHTML = `<div class="empty"><span class="e-emoji">📍</span>Първо избери локация (⚙︎ горе).</div>`; return; }
+    track('v2-search', { q });
+    $('#results').innerHTML = `<div class="empty"><span class="spinner"></span> Търся „${esc(q)}"…</div>`;
+    if (abort) abort.abort(); abort = new AbortController();
+    const u = `/api/compare?q=${encodeURIComponent(q)}&lat=${state.loc.lat}&lng=${state.loc.lng}&radius_km=${state.radius}&min_chains=1&limit=30`;
+    fetch(u, { signal:abort.signal }).then(r=>r.json()).then(d => { state.lastResult = d; renderResults(d, q); })
+      .catch(e => { if (e.name!=='AbortError') $('#results').innerHTML = `<div class="empty">⚠️ Грешка. Опитай пак.</div>`; });
+  }
+
+  // build a unified product list (all variants/sizes) with chain filter applied
+  function buildProducts(d) {
+    const list = [];
+    for (const m of (d.matches||[])) {
+      const chains = (m.chains||[]).filter(c => chainEnabled(c.chain_slug))
+        .map(c => ({ name:c.chain_name, slug:c.chain_slug, price:c.min_price, retail:c.price_retail, date:c.snapshot_date }));
+      if (!chains.length) continue;
+      chains.sort((a,b)=>a.price-b.price);
+      list.push({ name:m.display, key:cleanName(m.display), price:chains[0].price, retail:chains[0].retail, chains });
+    }
+    for (const l of (d.loose||[])) {
+      if (!chainEnabled(l.chain_slug)) continue;
+      const key = cleanName(l.raw_name);
+      const ex = list.find(p => p.key === key);
+      if (ex) { if (!ex.chains.some(c=>c.slug===l.chain_slug)) { ex.chains.push({ name:l.chain_name, slug:l.chain_slug, price:l.price, retail:l.price_retail, date:l.snapshot_date }); ex.chains.sort((a,b)=>a.price-b.price); ex.price = ex.chains[0].price; ex.retail = ex.chains[0].retail; } continue; }
+      list.push({ name:l.raw_name, key, price:l.price, retail:l.price_retail, chains:[{ name:l.chain_name, slug:l.chain_slug, price:l.price, retail:l.price_retail, date:l.snapshot_date }] });
+    }
+    list.sort((a,b)=>a.price-b.price);
+    return list;
+  }
+
+  function prodCard(p, isHero) {
+    const inB = state.basket.includes(p.key), inF = state.favorites.includes(p.key);
+    const acts = `<div class="acts">
+      <button class="a-btn a-add${inB?' on':''}" data-add="${esc(p.key)}" title="Добави в кошницата">${inB?'✓':'+'}</button>
+      <button class="a-btn a-fav${inF?' on':''}" data-fav="${esc(p.key)}" title="Запази в любими">${inF?'♥':'♡'}</button></div>`;
+    const more = p.chains.length > 1 ? `<details class="prod-more"><summary>${p.chains.length} вериги — виж всички цени</summary>
+      ${p.chains.map((c,i)=>`<div class="cmp-line${i===0?' best':''}"><span class="cl-dot" style="background:${chainColor(c.slug)}"></span><span class="cl-chain">${esc(c.name)}${c.date?` <span class="date-pill">${fmtDate(c.date)}</span>`:''}</span><span class="cl-price">${eur(c.price)}${discBadge(c.price,c.retail)}</span></div>`).join('')}</details>` : '';
+    return `<div class="prod">
+      <div class="prod-top"><div class="prod-info"><div class="prod-name">${esc(p.name)}</div>
+        <div class="prod-sub">от <b>${eur(p.price)}</b>${discBadge(p.price,p.retail)} · ${esc(p.chains[0].name)}${p.chains.length>1?` · +${p.chains.length-1} още`:''}${p.chains[0].date?` · <span class="date-pill">${fmtDate(p.chains[0].date)}</span>`:''}</div></div>${acts}</div>${more}</div>`;
+  }
+
+  // Collapse a distance/price-sorted store list to the single best branch per chain.
+  // The server already sorts (carriers first, then cheapest, then nearest), so the
+  // FIRST time we see a chain is its best store. This stops 5x the same chain
+  // from filling every visible slot and burying other chains that also carry the items.
+  function bestPerChain(list) {
+    const seenSlug = new Set(), seenBrand = new Set(), out = [];
+    // brand = chain name without the franchise parenthetical, so two franchise
+    // variants of the same brand collapse to one row.
+    const brandOf = s => String(s.chain_name || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    for (const s of list) {
+      const slug = s.chain_slug || s.chain_name || '';
+      const b = brandOf(s);
+      if (seenSlug.has(slug) || (b && seenBrand.has(b))) continue;
+      seenSlug.add(slug); if (b) seenBrand.add(b);
+      out.push(s);
+    }
+    return out;
+  }
+
+  function renderResults(d, q) {
+    const products = buildProducts(d);
+    const stores = bestPerChain((d.stores||[]).filter(s => chainEnabled(s.chain_slug)));
+    if (!products.length && !stores.length) {
+      $('#results').innerHTML = `<div class="empty"><span class="e-emoji">🔍</span>Няма резултати за „${esc(q)}"${state.chainOff.size?' с избраните вериги':''}.<br/>Засега следим основно хранителни стоки и част от битовата химия (мляко, хляб, месо, плодове, препарат за съдове…). Провери правописа, опитай по-общо${state.chainOff.size?', включи още вериги (⚙︎)':' или увеличи радиуса (⚙︎)'}.</div>`;
+      return;
+    }
+    const hero = products[0];
+    let html = '';
+    if (hero) {
+      const inB = state.basket.includes(hero.key), inF = state.favorites.includes(hero.key);
+      html += `<div class="section-label">🏆 Най-евтиното</div><div class="best-card">
+        <div class="bc-tag">Най-добра цена около теб</div><div class="bc-name">${esc(hero.name)}</div>
+        <div class="bc-row"><div><div class="bc-price">${eur(hero.price)}${discBadge(hero.price,hero.retail)}</div>
+          <div class="bc-where">${discPct(hero.price,hero.retail)?`<span class="retail-old">${eur(hero.retail)}</span> `:''}в <b>${esc(hero.chains[0].name)}</b>${hero.chains[0].date?` · <span class="date-pill">${fmtDate(hero.chains[0].date)}</span>`:''}</div></div>
+          <div class="acts"><button class="a-btn a-add${inB?' on':''}" data-add="${esc(hero.key)}">${inB?'✓':'+'}</button>
+          <button class="a-btn a-fav${inF?' on':''}" data-fav="${esc(hero.key)}">${inF?'♥':'♡'}</button></div></div></div>`;
+    }
+    if (products.length > 1) {
+      html += `<div class="section-label">📋 Избери продукт / размер</div>` + products.slice(1, 25).map(p => prodCard(p)).join('');
+    }
+    if (stores.length) {
+      html += `<div class="section-label">🛒 Най-евтино по магазин</div><div class="store-map"><div class="store-list">
+        ${stores.slice(0,12).map((s,i)=>`<div class="store-row${i===0?' is-best':''}" data-i="${i}">
+          <span class="sr-dot" style="background:${i===0?'var(--hi)':chainColor(s.chain_slug)}"></span>
+          <div class="sr-mid"><div class="sr-chain">${esc(s.chain_name)} ${i===0?'<span class="sr-badge">★</span>':''}</div>
+          ${s.raw_name?`<div class="sr-prod">${esc(s.raw_name)}</div>`:''}
+          <div class="sr-dist">${(s.dist_m/1000).toFixed(1)} км${s.address?' · '+esc(String(s.address).split(',')[0]):''}${s.snapshot_date?' · '+fmtDate(s.snapshot_date):''}</div></div>
+          <div class="sr-price">${eur(s.price)}${discBadge(s.price, s.price_retail)}</div></div>`).join('')}
+        </div><div id="map"></div></div>`;
+    }
+    // Few results nearby (sparse area or niche product) → one-tap widen instead of a thin page.
+    if (stores.length && stores.length <= 3 && state.radius < 10) {
+      html += `<button class="widen-nudge" data-widen="1">🔭 Малко резултати в ${state.radius} км — пробвай по-голям радиус</button>`;
+    }
+    $('#results').innerHTML = html;
+    if (stores.length) drawMap(stores.slice(0,40));
+  }
+
+  // ===================== PROMOTIONS (top hook)
+  function showPromos() {
+    state.mode = 'promos'; renderGroups();
+    if (!state.loc) { $('#results').innerHTML = `<div class="empty"><span class="e-emoji">📍</span>Избери локация, за да видиш промоциите наблизо.</div>`; return; }
+    $('#results').innerHTML = `<div class="empty"><span class="spinner"></span> Зареждам топ промоции…</div>`;
+    fetch(`/api/promotions?lat=${state.loc.lat}&lng=${state.loc.lng}&radius_km=${state.radius}&per_chain=8`).then(r=>r.json())
+      .then(d => { state._promoData = d; renderPromos(d); }).catch(() => { $('#results').innerHTML = `<div class="empty">⚠️ Грешка при промоциите.</div>`; });
+  }
+  function renderPromos(d) {
+    const items = [];
+    (d.chains||[]).forEach(ch => { if (!chainEnabled(ch.chain_slug)) return;
+      (ch.items||[]).forEach(it => items.push({ name:it.raw_name, key:cleanName(it.raw_name), retail:it.price_retail, promo:it.price_promo, pct:it.pct_off, chain:ch.chain_name, slug:ch.chain_slug, date:it.snapshot_date })); });
+    items.sort((a,b)=>b.pct-a.pct);
+    if (!items.length) { $('#results').innerHTML = `<div class="empty"><span class="e-emoji">🏷️</span>Няма активни промоции в ${state.radius} км${state.chainOff.size?' с тези вериги':''}.<br/>Опитай да търсиш продукт горе.</div>`; return; }
+    let html = `<div class="section-label">🏷️ Топ промоции около теб</div>`;
+    html += items.slice(0,24).map(p => { const inB = state.basket.includes(p.key), inF = state.favorites.includes(p.key);
+      return `<div class="prod promo"><div class="prod-top"><div class="prod-info">
+        <span class="promo-pct">−${p.pct}%</span><div class="prod-name">${esc(p.name)}</div>
+        <div class="prod-sub"><span class="pp-retail">${eur(p.retail)}</span><b>${eur(p.promo)}</b>${p.pct?` <span class="disc">−${p.pct}%</span>`:''} · ${esc(p.chain)}</div></div>
+        <div class="acts"><button class="a-btn a-add${inB?' on':''}" data-add="${esc(p.key)}">${inB?'✓':'+'}</button>
+        <button class="a-btn a-fav${inF?' on':''}" data-fav="${esc(p.key)}">${inF?'♥':'♡'}</button></div></div></div>`; }).join('');
+    $('#results').innerHTML = html;
+  }
+
+  // ===================== results delegated clicks
+  $('#results').addEventListener('click', e => {
+    const add = e.target.closest('[data-add]'); if (add) { toggleBasket(add.dataset.add); rerender(); bumpFab(); return; }
+    const fav = e.target.closest('[data-fav]'); if (fav) { toggleFav(fav.dataset.fav); rerender(); return; }
+    const share = e.target.closest('[data-share]'); if (share) { shareBasket(); return; }
+    const back = e.target.closest('[data-back]'); if (back) { refresh(); return; }
+    const row = e.target.closest('.store-row'); if (row && window._markers) { focusStore(+row.dataset.i); return; }
+    const wid = e.target.closest('[data-widen]'); if (wid) { const order=[1,3,5,10]; state.radius = order.find(r=>r>state.radius)||10; save('kolichka.v2.radius', state.radius); paintRadius(); if (state.loc) { $('#loc-text').innerHTML = `до <b>${esc(state.loc.label||'')}</b> · ${state.radius} км`; fetchChains(); } track('v2-widen-radius', { to: state.radius }); refresh(true); return; }
+    // basket-compare store card → pan the map to that store (ignore clicks on the
+    // expandable "виж продуктите" details so it can still toggle).
+    const cs = e.target.closest('.cmp-store');
+    if (cs && !e.target.closest('details') && window._markers) {
+      focusStore(+cs.dataset.i);
+      const m = $('#map'); if (m) m.scrollIntoView({ behavior:'smooth', block:'center' });
+    }
+  });
+
+  // ===================== MAP (OpenStreetMap tiles)
+  function drawTiles() {
+    if (tileLayer) { map.removeLayer(tileLayer); }
+    tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      { maxZoom:19, subdomains:'abc', attribution:'© OpenStreetMap contributors' }).addTo(map);
+  }
+  function drawMap(stores) {
+    const el = $('#map'); if (!el) return;
+    if (map) { map.remove(); map = null; tileLayer = null; }
+    map = L.map(el, { zoomControl:true }).setView([state.loc.lat, state.loc.lng], 13);
+    map.attributionControl.setPrefix(false);  // drop the "Leaflet 🇺🇦" prefix — OSM credit only
+    drawTiles();
+    L.circleMarker([state.loc.lat, state.loc.lng], { radius:7, color:'#fff', weight:2, fillColor:'#c81f6b', fillOpacity:1 }).addTo(map).bindPopup('Ти си тук');
+    markerLayer = L.layerGroup().addTo(map); window._markers = [];
+    const bounds = [[state.loc.lat, state.loc.lng]];
+    stores.forEach((s,i) => {
+      const lat = parseFloat(s.lat), lng = parseFloat(s.lng);
+      if (!isFinite(lat) || !isFinite(lng)) { window._markers[i] = null; return; }  // never leave a phantom ring
+      const best = i===0, col = chainColor(s.chain_slug);
+      const icon = best
+        ? L.divIcon({ className:'', html:`<div class="store-hl"><div class="hl-dot" style="background:${col}"></div></div>`, iconSize:[30,30], iconAnchor:[15,15] })
+        : L.divIcon({ className:'', html:`<div style="width:16px;height:16px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.45)"></div>`, iconSize:[16,16], iconAnchor:[8,8] });
+      const m = L.marker([lat, lng], { icon, zIndexOffset: best?5000:1000 }).addTo(markerLayer);
+      m.bindPopup(`<div class="map-pop"><b>${esc(s.chain_name)}</b><div class="mp-p">${s.raw_name?esc(s.raw_name)+' · ':''}${eur(s.price)} · ${(s.dist_m/1000).toFixed(1)} км</div></div>`);
+      window._markers[i] = m; bounds.push([lat, lng]); });
+    try { if (bounds.length > 1) map.fitBounds(bounds, { padding:[30,30], maxZoom:15 }); } catch(_) {}
+    setTimeout(() => map && map.invalidateSize(), 120);
+  }
+  function focusStore(i) {
+    const m = window._markers && window._markers[i]; if (!m || !map) return;
+    const z = Math.max(map.getZoom(), 15);
+    // Centre the marker a little BELOW the map's vertical middle: its popup opens
+    // upward, so this keeps both the pin and the popup fully visible and clear of
+    // the sticky header (otherwise the pin can land behind the logo).
+    const offsetY = Math.round(map.getSize().y * 0.22);
+    const target = map.unproject(map.project(m.getLatLng(), z).subtract([0, offsetY]), z);
+    map.setView(target, z, { animate:true });
+    m.openPopup();
+  }
+
+  // ===================== BASKET + FAVS
+  function basketSig() { return state.basket.map(s=>s.toLowerCase()).join(',') + '|' + state.radius + '|' + (state.loc?state.loc.lat.toFixed(3)+','+state.loc.lng.toFixed(3):''); }
+  let basketAbort = null;
+  // Fetch per-item cheapest prices + total so the drawer shows a running tally
+  // (cheapest-anywhere per item) BEFORE the user runs a full store comparison.
+  function fetchBasketPrices(force) {
+    if (!state.basket.length || !state.loc) { state.basketData = null; renderBasketItems(); return; }
+    const sig = basketSig();
+    if (!force && state.basketSig === sig && state.basketData) { renderBasketItems(); return; }
+    state.basketSig = sig; state.basketLoading = true; renderBasketItems();
+    if (basketAbort) basketAbort.abort(); basketAbort = new AbortController();
+    const items = state.basket.map(s => s.toLowerCase()).join(',');
+    fetch(`/api/basket?items=${encodeURIComponent(items)}&lat=${state.loc.lat}&lng=${state.loc.lng}&radius_km=${state.radius}`, { signal: basketAbort.signal })
+      .then(r => r.json()).then(d => { state.basketData = d; state.basketLoading = false; renderBasketItems(); })
+      .catch(e => { if (e.name !== 'AbortError') { state.basketLoading = false; renderBasketItems(); } });
+  }
+  function toggleBasket(name) { const i = state.basket.indexOf(name); if (i>=0) state.basket.splice(i,1); else state.basket.push(name);
+    save('kolichka.basket', state.basket); syncBasketUrl(); bumpFab(); renderSheet();
+    if (sheet.classList.contains('open')) fetchBasketPrices();
+    track('v2-basket-toggle', { n: state.basket.length }); }
+  function toggleFav(name) { const i = state.favorites.indexOf(name); const adding = i < 0; if (i>=0) state.favorites.splice(i,1); else state.favorites.push(name);
+    save('kolichka.favorites', state.favorites); renderSheet(); resyncPushIfOn(); if (adding) maybePromptPush(); }
+  function bumpFab() { $('#bf-badge').textContent = state.basket.length; $('#basket-fab').classList.toggle('empty', state.basket.length===0); }
+
+  const sheet = $('#sheet'), back = $('#sheet-back');
+  function openSheet() { renderSheet(); sheet.classList.add('open'); back.classList.add('open'); fetchBasketPrices(); track('v2-basket-open', {}); }
+  function closeSheet() { sheet.classList.remove('open'); back.classList.remove('open'); }
+  $('#basket-fab').addEventListener('click', () => { openSheet(); setPane('basket'); });
+  $('#sheet-x').addEventListener('click', closeSheet);
+  back.addEventListener('click', closeSheet);
+
+  // basket items + running total (uses the cheapest-per-item from /api/basket)
+  function renderBasketItems() {
+    const bi = $('#b-items'), tot = $('#b-total');
+    if (!state.basket.length) { bi.innerHTML = `<div class="b-empty">Кошницата е празна. Добави с <b>+</b> от резултатите, или от ❤️ Любими.</div>`; tot.innerHTML = ''; return; }
+    const mix = state.basketData && state.basketData.mixed_optimal;
+    bi.innerHTML = state.basket.map((n, i) => {
+      const inF = state.favorites.includes(n);
+      let price = '';
+      if (state.basketLoading) price = `<span class="bi-price loading">…</span>`;
+      else if (mix && mix.breakdown[i]) { const b = mix.breakdown[i]; price = b.price != null ? `<span class="bi-price">${b.approx?'<span class="approx-tag" title="близък продукт от същата категория">≈</span> ':''}${eur(b.price)}${discBadge(b.price, b.price_retail)}</span>` : `<span class="bi-price miss">няма</span>`; }
+      return `<div class="b-item"><span class="bi-emoji">${emojiFor(n)}</span><span class="bi-name">${esc(prettyItem(n))}</span>
+        ${price}<button class="bi-fav${inF?' on':''}" data-bfav="${esc(n)}" title="Запази в любими">${inF?'♥':'♡'}</button>
+        <button class="bi-x" data-rm="${esc(n)}" aria-label="Премахни">✕</button></div>`; }).join('');
+    if (state.basketLoading) tot.innerHTML = `<div class="b-total-note"><span class="spinner"></span> смятам цени…</div>`;
+    else if (mix) tot.innerHTML = `<div class="b-total-row"><span>Общо (най-евтини цени)</span><b>${eur(mix.total)}</b></div>
+        <div class="b-total-note">${mix.items_found}/${mix.items_total} продукта намерени около теб · виж и по магазини ↓</div>`;
+    else tot.innerHTML = '';
+  }
+
+  function renderSheet() {
+    $('#cnt-basket').textContent = state.basket.length;
+    $('#cnt-favs').textContent = state.favorites.length;
+    renderBasketItems();
+    const fc = $('#fav-chips');
+    fc.innerHTML = !state.favorites.length
+      ? `<div class="fav-empty">Маркирай продукти с ♡ от резултатите, за да ги зареждаш бързо тук — после ги добавяш в кошницата с един бутон.</div>`
+      : state.favorites.map(n => { const inB = state.basket.includes(n);
+          return `<div class="fav-chip"><span class="fc-emoji">${emojiFor(n)}</span><span class="fc-name">${esc(prettyItem(n))}</span>
+            <button class="fc-add${inB?' on':''}" data-favadd="${esc(n)}">${inB?'✓ в кошница':'+ добави'}</button>
+            <button class="fc-del" data-favdel="${esc(n)}" aria-label="Премахни от любими">×</button></div>`; }).join('');
+    $('#cmp-btn').disabled = state.basket.length === 0;
+    renderPushOpt();
+  }
+  function setPane(p) {
+    $('#tab-basket').classList.toggle('on', p === 'basket');
+    $('#tab-favs').classList.toggle('on', p === 'favs');
+    $('#pane-basket').classList.toggle('on', p === 'basket');
+    $('#pane-favs').classList.toggle('on', p === 'favs');
+    $('#sheet-title').textContent = p === 'favs' ? '❤️ Любими' : '🧺 Моята кошница';
+  }
+  $('#tab-basket').addEventListener('click', () => setPane('basket'));
+  $('#tab-favs').addEventListener('click', () => setPane('favs'));
+  $('#favs-btn').addEventListener('click', () => { openSheet(); setPane('favs'); });
+  $('#b-items').addEventListener('click', e => {
+    const x = e.target.closest('[data-rm]'); if (x) { toggleBasket(x.dataset.rm); rerender(); return; }
+    const f = e.target.closest('[data-bfav]'); if (f) { toggleFav(f.dataset.bfav); rerender(); }
+  });
+  $('#fav-chips').addEventListener('click', e => {
+    const a = e.target.closest('[data-favadd]'); if (a) { if (!state.basket.includes(a.dataset.favadd)) toggleBasket(a.dataset.favadd); rerender(); return; }
+    const d = e.target.closest('[data-favdel]'); if (d) { toggleFav(d.dataset.favdel); rerender(); }
+  });
+  $('#fav-addall').addEventListener('click', () => { let n=0; state.favorites.forEach(x => { if (!state.basket.includes(x)) { state.basket.push(x); n++; } });
+    if (n) { save('kolichka.basket', state.basket); syncBasketUrl(); bumpFab(); renderSheet(); rerender(); if (sheet.classList.contains('open')) fetchBasketPrices(); } });
+
+  // ===================== SHARE (live ?b= link — same format as v1)
+  function showToast(msg) {
+    let t = document.getElementById('v2-toast');
+    if (!t) { t = document.createElement('div'); t.id = 'v2-toast'; document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+  const encodeBasketUrl = (items) => (items || []).join(',');
+  function decodeBasketUrl(str) { if (!str) return null; const a = String(str).split(',').map(s => s.trim()).filter(s => s && s.length < 200); return (a.length && a.length <= 30) ? a : null; }
+  function syncBasketUrl() {
+    try { const u = new URL(location.href);
+      if (state.basket.length) u.searchParams.set('b', encodeBasketUrl(state.basket)); else u.searchParams.delete('b');
+      history.replaceState(null, '', u.toString());
+    } catch (_) {}
+  }
+  async function shareBasket() {
+    if (!state.basket.length) { showToast('Кошницата е празна'); return; }
+    syncBasketUrl();
+    const url = location.href, text = 'Виж моята кошница в Количка 🛒';
+    track('v2-basket-share', { n: state.basket.length });
+    try { if (navigator.share && (!navigator.canShare || navigator.canShare({ url }))) { await navigator.share({ title: 'Количка', text, url }); return; } }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(url); showToast('Линкът е копиран ✓'); return; } catch (_) {}
+    window.prompt('Копирай линка и го изпрати:', url);
+  }
+  $('#share-basket-btn').addEventListener('click', shareBasket);
+  $('#shared-x').addEventListener('click', () => { $('#shared-banner').hidden = true; });
+  $('#shared-new').addEventListener('click', (e) => { e.preventDefault(); state.basket = []; save('kolichka.basket', state.basket); syncBasketUrl(); $('#shared-banner').hidden = true; bumpFab(); renderSheet(); });
+
+  // ===================== WEB PUSH (notify when a favorite is discounted nearby)
+  const pushOK = ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
+  function urlB64ToUint8(b64) { const pad = '='.repeat((4 - b64.length % 4) % 4); const s = (b64 + pad).replace(/-/g,'+').replace(/_/g,'/'); const raw = atob(s); const out = new Uint8Array(raw.length); for (let i=0;i<raw.length;i++) out[i] = raw.charCodeAt(i); return out; }
+  async function getReg() { try { return await navigator.serviceWorker.register('/push-sw.js'); } catch (_) { return null; } }
+  async function currentSub() { if (!pushOK) return null; try { const reg = await navigator.serviceWorker.getRegistration(); return reg ? await reg.pushManager.getSubscription() : null; } catch (_) { return null; } }
+  async function syncPush(sub) { if (!sub) return; try { await fetch('/api/push/subscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ subscription: sub.toJSON(), favorites: state.favorites, lat: state.loc && state.loc.lat, lng: state.loc && state.loc.lng, radius_km: state.radius }) }); } catch (_) {} }
+  function resyncPushIfOn() { currentSub().then(s => { if (s) syncPush(s); }); }
+  async function enablePush() {
+    if (!pushOK) { alert('Този браузър не поддържа известия. На iPhone: добави сайта към началния екран и опитай пак.'); return; }
+    // Dismiss the drawer + any modal FIRST so the browser's permission prompt isn't
+    // hidden behind our bottom-sheet/overlay (z-index 950/960). Then request permission
+    // immediately on the user gesture (before any async work) so user-activation holds.
+    closeSheet();
+    document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
+    let perm = Notification.permission;
+    if (perm === 'default') perm = await Notification.requestPermission();
+    if (perm !== 'granted') { if (perm === 'denied') showToast('Известията са блокирани от браузъра'); renderPushOpt(); return; }
+    const reg = await getReg(); if (!reg) { alert('Неуспешна регистрация на известията.'); return; }
+    try {
+      const { key } = await (await fetch('/api/push/vapid-public')).json();
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8(key) });
+      await syncPush(sub); track('v2-push-enabled', {});
+      showToast('🔔 Известията са включени ✓');
+    } catch (e) { console.warn('push subscribe failed', e); showToast('Неуспешно включване — опитай пак'); }
+    renderPushOpt();
+  }
+  async function disablePush() {
+    const sub = await currentSub();
+    if (sub) { try { await fetch('/api/push/unsubscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ endpoint: sub.endpoint }) }); } catch (_) {} try { await sub.unsubscribe(); } catch (_) {} }
+    renderPushOpt();
+  }
+  async function renderPushOpt() {
+    const el = $('#push-opt'); if (!el) return; el.hidden = false;
+    if (!pushOK) { el.innerHTML = `<div class="po-title">🔔 Известия за намаления</div><div class="po-desc">Браузърът не ги поддържа. На iPhone добави сайта към <b>началния екран</b>, отвори го оттам и опитай пак.</div>`; return; }
+    if (Notification.permission === 'denied') { el.innerHTML = `<div class="po-title">🔔 Известия за намаления</div><div class="po-desc">Известията са блокирани в настройките на браузъра. Разреши ги за този сайт, за да те уведомяваме.</div>`; return; }
+    const sub = await currentSub();
+    el.innerHTML = sub
+      ? `<div class="po-title">🔔 Известия — <span class="po-state">включени</span></div><div class="po-desc">Ще ти пишем до 3 пъти на ден, когато продукт от любимите е намален близо до теб.</div><button class="po-off" id="push-off" type="button">Изключи</button>`
+      : `<div class="po-title">🔔 Известявай ме при намаления</div><div class="po-desc">Включи и ще ти пишем, когато любим продукт е на промоция близо до теб — до 3 пъти на ден, без спам (дори при заспал телефон).</div><button class="po-on" id="push-on" type="button">Включи известията</button>`;
+  }
+  $('#push-opt').addEventListener('click', e => { if (e.target.closest('#push-on')) enablePush(); else if (e.target.closest('#push-off')) disablePush(); });
+
+  // First time someone favorites a product → invite them to turn on push (own funnel,
+  // separate from the email subscribe). Shown once; if dismissed/enabled, never nags
+  // again (they can still toggle it in the ❤️ Любими tab).
+  function maybePromptPush() {
+    if (!pushOK || Notification.permission === 'granted' || Notification.permission === 'denied') return;
+    try { if (localStorage.getItem('kolichka.v2.pushAsked')) return; } catch (_) {}
+    currentSub().then(s => {
+      if (s) return;
+      try { localStorage.setItem('kolichka.v2.pushAsked', '1'); } catch (_) {}
+      const sv = state.savings, box = $('#pushprompt-save');
+      if (box) box.innerHTML = (sv && sv.wk >= 0.5) ? `💰 Около теб основните стоки падат с до <b>${eur(sv.wk)}</b> (−${sv.pct}%) тази седмица.` : '';
+      openModal('pushprompt-modal'); track('v2-pushprompt-shown', {});
+    });
+  }
+  $('#push-prompt-on').addEventListener('click', async () => { closeModal($('#pushprompt-modal')); await enablePush(); });
+
+  // ===================== BASKET COMPARE (renders in main area)
+  $('#cmp-btn').addEventListener('click', () => {
+    if (!state.basket.length || !state.loc) return;
+    track('v2-basket-compare', { n: state.basket.length });
+    closeSheet(); state.mode = 'basket';
+    window.scrollTo({ top:0, behavior:'smooth' });
+    // Reuse the drawer's already-fetched data when it matches the current basket.
+    if (state.basketData && state.basketSig === basketSig() && !state.basketLoading) { renderBasketResult(state.basketData); return; }
+    $('#results').innerHTML = `<button class="back-btn" data-back="1">← Назад към търсене</button><div class="empty"><span class="spinner"></span> Сравнявам магазините…</div>`;
+    const items = state.basket.map(s => s.toLowerCase()).join(',');
+    fetch(`/api/basket?items=${encodeURIComponent(items)}&lat=${state.loc.lat}&lng=${state.loc.lng}&radius_km=${state.radius}`).then(r=>r.json())
+      .then(d => { state.basketData = d; state.basketSig = basketSig(); renderBasketResult(d); })
+      .catch(() => { $('#results').innerHTML = `<button class="back-btn" data-back="1">← Назад</button><div class="empty">⚠️ Грешка. Опитай пак.</div>`; });
+  });
+  function renderBasketResult(d) {
+    // One best branch per chain -> the per-store list shows DIFFERENT chains that carry
+    // the basket instead of many branches of the two closest chains. List + map share
+    // this array so marker indices stay aligned.
+    const stores = bestPerChain((d.stores||[]).filter(s => chainEnabled(s.chain_slug)));
+    const mix = d.mixed_optimal;
+    let html = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="back-btn" data-back="1">← Назад към търсене</button><button class="back-btn" data-share="1">📤 Сподели кошницата</button></div>`;
+    if (!stores.length) { html += `<div class="empty">Нямам достатъчно данни за тези продукти в ${state.radius} км. Опитай по-общи имена или повече вериги (⚙︎).</div>`; $('#results').innerHTML = html; return; }
+    const totalItems = stores[0].items_total;
+    const maxFound = Math.max.apply(null, stores.map(s => s.items_found));
+    const comparable = stores.filter(s => s.items_found === maxFound);   // fair apples-to-apples set
+    const lo = Math.min.apply(null, comparable.map(s => s.total));
+    const hi = Math.max.apply(null, comparable.map(s => s.total));
+
+    // 1) Savings headline
+    html += `<div class="section-label">🧺 Кошницата ти (${state.basket.length} продукта)</div>`;
+    if (hi > lo + 0.005) {
+      html += `<div class="b-headline">Спестяваш до <span class="bh-save">${eur(hi - lo)}</span>
+        <div class="bh-range">същите ${maxFound} продукта струват от <b>${eur(lo)}</b> до <b>${eur(hi)}</b> в различните магазини</div></div>`;
+    }
+
+    // 2) Per-item cheapest nearby — ALWAYS shown so the user sees WHERE each favourite
+    //    is cheapest (chain + how far). The split-total + savings vs the best single
+    //    store is highlighted only when actually splitting your shop wins.
+    if (mix && mix.items_found) {
+      const splitWins = mix.total < lo - 0.005, saved = lo - mix.total;
+      const km = b => (b.dist_m != null) ? ` · ${(b.dist_m/1000).toFixed(1)} км` : '';
+      html += `<div class="b-split"><div class="bs-tag">🏆 Най-евтино за всеки продукт наблизо</div>
+        ${mix.breakdown.map(b => b.price != null
+          ? `<div class="bs-line"><span>${b.approx?'<span class="approx-tag" title="близък продукт от същата категория">≈</span> ':''}${b.is_stale?'<span class="approx-tag" title="последна известна цена">⏱</span> ':''}${esc(b.name||b.query)} <span class="bsl-shop">@ ${esc(b.chain_name)}${km(b)}</span></span><span>${(b.price_retail&&discPct(b.price,b.price_retail))?`<span class="retail-old">${eur(b.price_retail)}</span>`:''}${eur(b.price)}${discBadge(b.price, b.price_retail)}</span></div>`
+          : `<div class="bs-line csl-miss"><span>${esc(b.query)}</span><span>няма наблизо</span></div>`).join('')}
+        <div class="bs-line" style="font-weight:700;border-top:1px solid var(--line);margin-top:4px;padding-top:6px"><span>${splitWins?`Ако обиколиш ${mix.stores_count} магазина`:'Общо (разделено)'}</span><span>${eur(mix.total)}</span></div>
+        ${splitWins?`<div class="bs-save" style="text-align:right;margin-top:4px">спестяваш −${eur(saved)} спрямо най-добрия един магазин</div>`:''}</div>`;
+    }
+
+    // 3) Per-store comparison — each store separately, ranked, with per-item breakdown
+    html += `<div class="section-label">🏪 По магазини — цялата кошница на едно място</div>`;
+    html += stores.slice(0, 5).map((s, i) => {
+      const best = i === 0;
+      const diff = s.total - lo;
+      let badge;
+      if (s.items_found < maxFound) badge = `<div class="cs-partial">${s.items_found}/${totalItems} продукта</div>`;
+      else if (diff > 0.005) badge = `<div class="cs-diff">+${eur(diff)}</div>`;
+      else badge = `<div class="cs-best">★ най-евтино</div>`;
+      const lines = s.breakdown.map(b => b.price != null
+        ? `<div class="cs-line"><span>${b.approx?'<span class="approx-tag" title="близък продукт от същата категория">≈</span> ':''}${esc(b.name||b.query)}</span><span>${discPct(b.price,b.price_retail)?`<span class="retail-old">${eur(b.price_retail)}</span>`:''}${eur(b.price)}${discBadge(b.price,b.price_retail)}</span></div>`
+        : `<div class="cs-line csl-miss"><span>${esc(b.query)}</span><span>няма</span></div>`).join('');
+      return `<div class="cmp-store${best?' best':''}" data-i="${i}">
+        <div class="cs-head"><span class="cs-dot" style="background:${chainColor(s.chain_slug)}"></span>
+          <div class="cs-info"><div class="cs-chain">${esc(s.chain_name)}</div>
+            <div class="cs-meta">${s.items_found}/${totalItems} продукта · ${(s.dist_m/1000).toFixed(1)} км</div></div>
+          <div class="cs-right"><div class="cs-total">${eur(s.total)}</div>${badge}</div></div>
+        <details class="cs-more"><summary>виж продуктите</summary>${lines}</details></div>`;
+    }).join('');
+
+    const anyApprox = stores.some(s => s.breakdown.some(b => b.approx)) || (mix && mix.breakdown.some(b => b.approx));
+    if (anyApprox) html += `<div class="approx-note"><b>≈</b> = най-близкият продукт от същата категория (марка/грамаж/масленост), когато точният артикул липсва в магазина — за да е сравнима цялата кошница.</div>`;
+
+    html += `<div class="section-label">🗺️ Магазините на картата</div><div id="map"></div>`;
+    $('#results').innerHTML = html;
+    drawMap(stores.slice(0,30).map(s => ({ chain_name:s.chain_name, chain_slug:s.chain_slug, lat:s.lat, lng:s.lng, price:s.total, dist_m:s.dist_m })));
+    // Earn the ask: offer the weekly-savings subscribe only AFTER showing real savings.
+    if (hi > lo + 0.005) setTimeout(() => showSavingsNudge(hi - lo), 1500);
+  }
+
+  // ===================== FOOTER: modals, feedback, subscribe, nudge, stats
+  function openModal(id) { const m = $('#' + id); if (m) m.classList.add('open'); }
+  function closeModal(m) { m.classList.remove('open'); }
+  document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) closeModal(m); }));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(closeModal); });
+  $('#open-faq').addEventListener('click', () => { openModal('faq-modal'); track('v2-faq-open', {}); });
+  $('#open-fb').addEventListener('click', () => openModal('fb-modal'));
+  $('#foot-score').addEventListener('click', () => { openModal('fb-modal'); track('v2-score-click', {}); });
+  $('#open-sub').addEventListener('click', openSubModal);
+
+  // App score (avg of user star-ratings) shown right under the feedback button - like v1.
+  fetch('/api/feedback/summary').then(r => r.json()).then(s => {
+    const total = parseInt(s && s.total, 10) || 0;
+    const avg = parseFloat(s && s.avg) || 0;
+    if (!total || !avg) return;
+    const full = Math.round(avg);
+    const stars = '★★★★★'.slice(0, full) + '☆☆☆☆☆'.slice(0, 5 - full);
+    const word = total === 1 ? 'оценка' : 'оценки';
+    const el = $('#foot-score');
+    el.innerHTML = `<span class="fs-stars">${stars}</span> <b>${avg.toFixed(1)}</b> / 5 · ${total} ${word} — оцени и ти`;
+    el.hidden = false;
+  }).catch(() => {});
+
+  // feedback
+  let fbCat = null, fbRating = 0;
+  $('#fb-cats').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (!b) return; fbCat = b.dataset.cat; [...$('#fb-cats').children].forEach(c => c.classList.toggle('on', c === b)); });
+  $('#fb-stars').addEventListener('click', e => { const s = e.target.closest('[data-v]'); if (!s) return; fbRating = +s.dataset.v; [...$('#fb-stars').children].forEach(x => x.classList.toggle('lit', +x.dataset.v <= fbRating)); });
+  $('#fb-send').addEventListener('click', async () => {
+    const msg = $('#fb-msg'), comment = $('#fb-comment').value.trim(), subject = $('#fb-subject').value.trim();
+    if (!fbCat && !comment) { msg.className = 'modal-msg err'; msg.textContent = 'Избери категория или напиши съобщение.'; return; }
+    const btn = $('#fb-send'); btn.disabled = true; btn.textContent = 'Изпращам…';
+    try {
+      const r = await fetch('/api/feedback', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ category: fbCat || 'praise', rating: fbRating || null, subject, comment, url: location.href, context: { v: 'v2', ua: navigator.userAgent } }) });
+      if (!r.ok) throw 0;
+      msg.className = 'modal-msg ok'; msg.textContent = 'Благодаря за отзива! 🙏'; track('v2-feedback', { category: fbCat || 'praise' });
+      $('#fb-comment').value = ''; $('#fb-subject').value = ''; setTimeout(() => closeModal($('#fb-modal')), 1200);
+    } catch (_) { msg.className = 'modal-msg err'; msg.textContent = 'Грешка. Опитай пак.'; }
+    btn.disabled = false; btn.textContent = 'Изпрати';
+  });
+
+  // localized savings figure (honest: the 8-staple basket the weekly email uses)
+  function fetchSavings() {
+    if (!state.loc) return;
+    const sig = state.loc.lat.toFixed(2) + ',' + state.loc.lng.toFixed(2);
+    if (state._savSig === sig) { renderSavings(); return; }
+    state._savSig = sig;
+    fetch(`/api/savings-estimate?lat=${state.loc.lat}&lng=${state.loc.lng}`).then(r => r.json()).then(d => {
+      const wk = d && d.savings_per_week ? Number(d.savings_per_week) : 0;
+      const rt = d && d.retail_total ? Number(d.retail_total) : 0;
+      state.savings = wk >= 0.5 ? { wk, retail: rt, pct: rt ? Math.round(wk / rt * 100) : 0 } : null;
+      renderSavings();
+    }).catch(() => {});
+  }
+  function renderSavings() {
+    const s = state.savings, has = s && s.wk >= 0.5;
+    const t = $('#nudge-title'), n = $('#nudge-desc'), m = $('#sub-savings');
+    if (t) t.innerHTML = has ? `💰 Спести до ${eur(s.wk)}/седмица` : 'Хващай намаленията навреме';
+    if (n) n.innerHTML = has
+      ? `<b>${eur(s.wk)}</b> от ~${eur(s.retail)}${s.pct ? ` (−${s.pct}%)` : ''} само за основните стоки около теб. Пращаме ти ги всяка седмица — безплатно.`
+      : 'Седмично най-добрите промоции около теб — безплатно.';
+    if (m) m.innerHTML = has
+      ? `💰 Примерна кошница с основни стоки (хляб, мляко, яйца, месо…) струва ~<b>${eur(s.retail)}</b>. С промоциите спестяваш до <b>${eur(s.wk)}</b>${s.pct ? ` (−${s.pct}%)` : ''}. Колкото по-голямо домакинството, толкова повече.`
+      : '';
+  }
+
+  // subscribe
+  const SUBBED = 'kolichka.subbed';
+  function openSubModal() {
+    openModal('sub-modal'); fetchSavings(); renderSavings();
+    $('#sub-loc').innerHTML = state.loc ? `📍 за района на <b style="color:var(--accent)">${esc(state.loc.label || 'твоята локация')}</b>` : '📍 включи локация за по-точни промоции';
+    track('v2-subscribe-open', {});
+  }
+  $('#sub-send').addEventListener('click', async () => {
+    const email = $('#sub-email').value.trim(), msg = $('#sub-msg');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.className = 'modal-msg err'; msg.textContent = 'Въведи валиден имейл.'; return; }
+    const btn = $('#sub-send'); btn.disabled = true; btn.textContent = '…';
+    const body = { email, source: 'v2-footer' };
+    if (state.loc) { body.lat = state.loc.lat; body.lng = state.loc.lng; body.location_label = state.loc.label || ''; }
+    try {
+      const r = await fetch('/api/subscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { msg.className = 'modal-msg err'; msg.textContent = (j.error && j.error.length < 90) ? j.error : 'Грешка. Опитай пак.'; btn.disabled = false; btn.textContent = 'Абонирай се'; return; }
+      msg.className = 'modal-msg ok'; msg.textContent = j.status === 'already-confirmed' ? 'Вече си абониран ✓' : 'Готово! Провери имейла си за потвърждение.';
+      try { localStorage.setItem(SUBBED, '1'); } catch (_) {}
+      track('v2-subscribed', {}); setTimeout(() => closeModal($('#sub-modal')), 1600);
+    } catch (_) { msg.className = 'modal-msg err'; msg.textContent = 'Грешка. Опитай пак.'; btn.disabled = false; btn.textContent = 'Абонирай се'; }
+  });
+
+  // Subscribe nudge — shown AFTER a successful comparison (value earned), NOT on scroll.
+  // Anchored to the basket's OWN savings. Once per session; respects a 7-day dismissal
+  // and the subscribed flag. (Old behaviour: fired on scroll>1.2 screens, before any value
+  // — engaged users ignored it and ~0 converted.)
+  const NUDGE_DISMISS = 'kolichka.nudgeDismiss';   // ms timestamp of last dismissal
+  function nudgeBlocked() {
+    try {
+      if (localStorage.getItem(SUBBED)) return true;
+      if (sessionStorage.getItem('v2.nudge')) return true;              // already shown this session
+      const d = parseInt(localStorage.getItem(NUDGE_DISMISS) || '0', 10);
+      if (d && (Date.now() - d) < 7 * 24 * 60 * 60 * 1000) return true; // dismissed < 7 days ago
+    } catch (_) {}
+    return false;
+  }
+  function showSavingsNudge(basketSaving) {
+    if (!basketSaving || basketSaving < 0.01) return;                   // only ask when real savings were shown
+    if (nudgeBlocked()) return;
+    try { sessionStorage.setItem('v2.nudge', '1'); } catch (_) {}
+    $('#nudge-title').innerHTML = `💰 Спести до ${eur(basketSaving)} за тази кошница`;
+    $('#nudge-desc').textContent = 'Пращаме ти най-добрите оферти за твоите продукти всяка седмица — безплатно.';
+    $('#sub-nudge').classList.add('show');
+    track('subscribe-popup-shown', { trigger: 'post-compare' });
+  }
+  function initNudge() { /* no scroll/auto trigger — shown post-comparison via showSavingsNudge() */ }
+  $('#nudge-x').addEventListener('click', () => { $('#sub-nudge').classList.remove('show'); try { localStorage.setItem(NUDGE_DISMISS, String(Date.now())); } catch (_) {} });
+  $('#nudge-cta').addEventListener('click', () => { $('#sub-nudge').classList.remove('show'); openSubModal(); });
+
+  // footer stats
+  fetch('/api/stats').then(r => r.json()).then(d => {
+    if (!d) return; const parts = [];
+    if (d.stores) parts.push(`${Number(d.stores).toLocaleString('bg-BG')} магазина`);
+    if (d.settlements) parts.push(`${d.settlements} населени места`);
+    const items = Number(d.canonicals || 0), prices = Number(d.raw_rows || 0);
+    if (items) parts.push(`${items.toLocaleString('bg-BG')} продукта`);
+    if (prices) parts.push(`${prices.toLocaleString('bg-BG')} цени`);
+    if (d.latest_snapshot) { try { parts.push('обновено ' + new Date(d.latest_snapshot).toLocaleDateString('bg-BG', { day:'2-digit', month:'2-digit' })); } catch (_) {} }
+    if (parts.length) $('#foot-stats').insertAdjacentHTML('afterbegin', parts.join(' · ') + ' · ');
+  }).catch(() => {});
+
+  // ---- version + new-version detection (installed icons don't always auto-update) ----
+  const APP_BUILD = 0; // open-source build  // bump on each deploy; compared against /version.json
+  let _verNotes = [], _verStr = '', _verDate = '';
+  let _updateReady = false;
+  function applyVersion(d) {
+    if (!d) return;
+    _verStr = d.version || ('build ' + APP_BUILD); _verNotes = d.notes || []; _verDate = d.date || '';
+    const fv = $('#foot-version'); if (fv) fv.textContent = _verStr;
+    if (d.build && d.build > APP_BUILD) {
+      _updateReady = true;  // pull new build silently on next changelog open
+      // Fire the "update available" signal AT MOST ONCE per device per build —
+      // checkVersion runs every 10 min, so without this guard it would spam.
+      try { if (localStorage.getItem('kolichka.v2.updSeen') !== String(d.build)) { track('v2-update-available', { to: d.build }); localStorage.setItem('kolichka.v2.updSeen', String(d.build)); } } catch (_) {}
+    }
+    // Show the "what's new" button (bottom) ONLY for 24h after the release date —
+    // no constant "update available" nudge. After 24h the version number stays but
+    // the highlighted button hides.
+    const relBtn = $('#open-changelog');
+    if (relBtn) {
+      let fresh = false;
+      const t = Date.parse((_verDate || '') + 'T00:00:00');
+      if (Number.isFinite(t)) { const h = (Date.now() - t) / 3600000; fresh = h >= 0 && h < 24; }
+      relBtn.hidden = !fresh;
+      if (fresh) relBtn.textContent = `🆕 Какво е новото в ${_verStr}`;
+    }
+  }
+  function checkVersion() { /* version check disabled in open-source build */ }
+  $('#open-changelog').addEventListener('click', () => {
+    $('#chg-version').textContent = _verStr; $('#chg-date').textContent = _verDate;
+    $('#chg-list').innerHTML = (_verNotes.length ? _verNotes : ['—']).map(n => `<li>${esc(n)}</li>`).join('');
+    openModal('changelog-modal');
+    track('v2-changelog-open', {});
+    // If a newer build is live, pull it in the background so the next launch is fresh.
+    if (_updateReady) { try { if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.update())); } catch (_) {} }
+  });
+  $('#open-howupdate').addEventListener('click', () => openModal('howupdate-modal'));
+  checkVersion();
+  setInterval(checkVersion, 10 * 60 * 1000);  // re-check while the app stays open
+
+  // ===================== INIT
+  // A shared ?b= link wins over localStorage so the recipient sees exactly the
+  // sender's list; then keep the address bar a live shareable link.
+  try {
+    const fromUrl = decodeBasketUrl(new URLSearchParams(location.search).get('b'));
+    if (fromUrl) { state.basket = fromUrl; save('kolichka.basket', state.basket); $('#shared-banner').hidden = false; setTimeout(() => track('share-link-opened', { items: fromUrl.length }), 500); }
+  } catch (_) {}
+  syncBasketUrl();
+  // Deep link from a push notification (?q=…) → pre-fill and run the search.
+  // mode/q are set now; setLoc()→refresh() runs the search once location is ready.
+  try {
+    const _qp = new URLSearchParams(location.search);
+    const dq = _qp.get('q');
+    if (dq) { $('#q').value = dq; $('#q-clear').hidden = false; state.mode = 'search';
+      const fromPush = _qp.get('src') === 'push';
+      setTimeout(() => track(fromPush ? 'v2-push-clicked' : 'push-link-opened', { q: dq }), 500); }
+  } catch (_) {}
+  initNudge();
+  paintRadius();
+  initLocation();
+  bumpFab();
+  renderGroups();
+  if (window.matchMedia('(min-width:680px)').matches) setTimeout(() => $('#q').focus(), 300);
+})();
+</script>
+</body>
+</html>
