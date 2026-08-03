@@ -26,6 +26,12 @@ const API_PROXY_URL = process.env.API_PROXY_URL || 'http://localhost:3001';
 const FOODBASE_API_KEY = process.env.FOODBASE_API_KEY || '';
 const FOODBASE_API_BASE = process.env.FOODBASE_API_BASE || 'https://foodbase.dev/v1';
 const FOODBASE_WEB_BASE = 'https://foodbase.dev/products';
+// Public (keyless) website endpoint used as a fallback when the API key is
+// missing or its quota/token is exhausted. Same {data,…} shape as the API.
+const FOODBASE_PUBLIC_SEARCH = `${FOODBASE_WEB_BASE}/search.json`;
+// Allow the keyless public fallback (default on) so the feature keeps working
+// when the daily API quota is spent. Set FOODBASE_ALLOW_PUBLIC=false to disable.
+const FOODBASE_ALLOW_PUBLIC = process.env.FOODBASE_ALLOW_PUBLIC !== 'false';
 
 // Build the config object that the frontend reads from config.js
 const KOLICHKA_CONFIG = {
@@ -39,7 +45,8 @@ const KOLICHKA_CONFIG = {
   ANALYTICS_SCRIPT: process.env.ANALYTICS_SCRIPT || '',
   ANALYTICS_WEBSITE_ID: process.env.ANALYTICS_WEBSITE_ID || '',
   // Frontend gates the nutrition UI on this; the key itself stays server-side.
-  FOODBASE_ENABLED: !!FOODBASE_API_KEY,
+  // Enabled when we have a key OR the keyless public fallback is allowed.
+  FOODBASE_ENABLED: !!FOODBASE_API_KEY || FOODBASE_ALLOW_PUBLIC,
 };
 
 // ── MIME types ──────────────────────────────────────────────────
@@ -133,9 +140,53 @@ function sendJSON(res, status, obj) {
   res.end(body);
 }
 
+async function fbGet(url, headers) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const r = await fetch(url, { headers: { Accept: 'application/json', ...headers }, signal: ctrl.signal });
+    let body = null;
+    try { body = await r.json(); } catch (_) { /* non-JSON */ }
+    return { status: r.status, ok: r.ok, body };
+  } catch (_) {
+    return { status: 0, ok: false, body: null };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Primary path: authenticated API (higher quality, needs a key + daily quota).
+// Returns { kind: 'ok'|'quota'|'auth'|'error'|'skip', data? }.
+async function fbFromApi(q, lang, limit) {
+  if (!FOODBASE_API_KEY) return { kind: 'skip' };
+  const u = `${FOODBASE_API_BASE}/foods/search?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(lang)}&limit=${limit}`;
+  const r = await fbGet(u, { 'X-API-Key': FOODBASE_API_KEY });
+  if (r.status === 429) return { kind: 'quota' };
+  if (r.status === 401 || r.status === 403) return { kind: 'auth' };
+  // Some quota states arrive as HTTP 200 with an {error} body.
+  if (r.body && r.body.error && r.body.data == null) {
+    return { kind: /quota|limit/i.test(String(r.body.error)) ? 'quota' : 'error' };
+  }
+  if (!r.ok || !r.body || !Array.isArray(r.body.data)) return { kind: 'error' };
+  return { kind: 'ok', data: r.body.data };
+}
+
+// Fallback path: the public website's keyless search.json (same {data,…} shape).
+// Doesn't consume the API-key quota; used when the key is absent/exhausted.
+async function fbFromPublic(q, lang, limit) {
+  if (!FOODBASE_ALLOW_PUBLIC) return { kind: 'skip' };
+  const u = `${FOODBASE_PUBLIC_SEARCH}?q=${encodeURIComponent(q)}&page=1&lang=${encodeURIComponent(lang)}`;
+  const r = await fbGet(u, {});
+  if (r.status === 429) return { kind: 'quota' };
+  if (!r.ok || !r.body || !Array.isArray(r.body.data)) return { kind: 'error' };
+  return { kind: 'ok', data: r.body.data.slice(0, limit) };
+}
+
 async function handleFoodbaseSearch(req, res, url) {
   if (req.method !== 'GET') return sendJSON(res, 405, { error: 'method_not_allowed' });
-  if (!FOODBASE_API_KEY) return sendJSON(res, 503, { error: 'foodbase_disabled', message: 'FoodBase is not configured.' });
+  if (!FOODBASE_API_KEY && !FOODBASE_ALLOW_PUBLIC) {
+    return sendJSON(res, 503, { error: 'foodbase_disabled', message: 'FoodBase is not configured.' });
+  }
 
   const q = (url.searchParams.get('q') || '').trim();
   if (!q) return sendJSON(res, 400, { error: 'missing_query', message: 'q is required.' });
@@ -150,38 +201,27 @@ async function handleFoodbaseSearch(req, res, url) {
     return sendJSON(res, 200, { ...hit.payload, cached: true });
   }
 
-  const upstream = `${FOODBASE_API_BASE}/foods/search?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(lang)}&limit=${limit}`;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 15000);
-  let r;
-  try {
-    r = await fetch(upstream, {
-      headers: { 'X-API-Key': FOODBASE_API_KEY, 'Accept': 'application/json' },
-      signal: ctrl.signal,
-    });
-  } catch (_) {
-    clearTimeout(timer);
-    return sendJSON(res, 504, { error: 'upstream_unreachable', message: 'Няма връзка с FoodBase.' });
-  }
-  clearTimeout(timer);
-
-  if (r.status === 429) return sendJSON(res, 429, { error: 'quota', message: 'Дневният лимит към FoodBase е достигнат.' });
-  if (r.status === 401 || r.status === 403) return sendJSON(res, 502, { error: 'auth', message: 'Невалиден ключ за FoodBase.' });
-
-  let body;
-  try { body = await r.json(); } catch (_) { return sendJSON(res, 502, { error: 'bad_upstream' }); }
-
-  if (!r.ok || (body && body.error && body.data == null)) {
-    // Some quota states arrive as HTTP 200 with an {error,message} body.
-    const isQuota = /quota/i.test(body && body.error ? String(body.error) : '');
-    return sendJSON(res, isQuota ? 429 : 502, {
-      error: isQuota ? 'quota' : 'upstream_error',
-      message: (body && body.message) || 'FoodBase грешка.',
-    });
+  // Try the authenticated API first, then fall back to the public endpoint.
+  let source = 'api';
+  let out = await fbFromApi(q, lang, limit);
+  if (out.kind !== 'ok') {
+    const apiKind = out.kind;
+    const pub = await fbFromPublic(q, lang, limit);
+    if (pub.kind === 'ok') { out = pub; source = 'public'; }
+    else {
+      // Neither worked — surface the most informative error.
+      if (apiKind === 'quota' || pub.kind === 'quota') {
+        return sendJSON(res, 429, { error: 'quota', message: 'Дневният лимит към FoodBase е достигнат.' });
+      }
+      if (apiKind === 'auth') {
+        return sendJSON(res, 502, { error: 'auth', message: 'Невалиден ключ за FoodBase.' });
+      }
+      return sendJSON(res, 502, { error: 'upstream_error', message: 'FoodBase не е достъпен в момента.' });
+    }
   }
 
-  const results = Array.isArray(body.data) ? body.data.map(fbNormalize) : [];
-  const payload = { query: q, article_url: fbArticleUrl(q), count: results.length, results };
+  const results = out.data.map(fbNormalize);
+  const payload = { query: q, article_url: fbArticleUrl(q), source, count: results.length, results };
 
   FB_CACHE.set(cacheKey, { at: Date.now(), payload });
   if (FB_CACHE.size > FB_CACHE_MAX) FB_CACHE.delete(FB_CACHE.keys().next().value);
@@ -268,6 +308,6 @@ server.listen(PORT, () => {
   console.log(`    APP_URL:         ${KOLICHKA_CONFIG.APP_URL || '(not set)'}`);
   console.log(`    DISCORD_URL:     ${KOLICHKA_CONFIG.DISCORD_URL || '(not set)'}`);
   console.log(`    ANALYTICS:       ${KOLICHKA_CONFIG.ANALYTICS_SCRIPT ? 'enabled' : 'disabled'}`);
-  console.log(`    FOODBASE:        ${FOODBASE_API_KEY ? 'enabled (key set)' : 'disabled (no key)'}`);
+  console.log(`    FOODBASE:        ${KOLICHKA_CONFIG.FOODBASE_ENABLED ? 'enabled' : 'disabled'} (key:${FOODBASE_API_KEY ? 'yes' : 'no'}, public-fallback:${FOODBASE_ALLOW_PUBLIC ? 'on' : 'off'})`);
   console.log(`  ─────────────────────────────────────\n`);
 });
