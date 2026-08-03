@@ -84,6 +84,24 @@ function fbArticleUrl(q) {
   return `${FOODBASE_WEB_BASE}?q=${encodeURIComponent(q)}`;
 }
 
+// Product display names carry size/units/store-brand codes that break FoodBase's
+// fuzzy match (e.g. "NN Хляб Добруджа нарязан 650 гр (650 g)"). Strip to the
+// searchable name ("Хляб Добруджа нарязан"). Mirrors the web app's cleanName.
+const FB_UNIT = new Set(['г', 'гр', 'грама', 'кг', 'мл', 'л', 'бр', 'броя', 'g', 'kg', 'ml', 'l', 'x', 'х']);
+function fbCleanQuery(s) {
+  const raw = String(s == null ? '' : s);
+  const out = raw.replace(/\([^)]*\)/g, ' ').split(/\s+/).filter((t) => {
+    const w = t.replace(/[.,]/g, '').toLowerCase();
+    if (!w) return false;
+    if (/^\d/.test(w)) return false;
+    if (w.endsWith('%')) return false;
+    if (FB_UNIT.has(w)) return false;
+    return true;
+  }).join(' ').trim();
+  const stripped = out.replace(/^[A-Z]{1,3}\s+/, '').trim();
+  return stripped || out || raw.trim();
+}
+
 function fbGrade(v) {
   if (typeof v !== 'string') return null;
   const c = v.trim().toLowerCase()[0];
@@ -194,8 +212,9 @@ async function handleFoodbaseSearch(req, res, url) {
     return sendJSON(res, 503, { error: 'foodbase_disabled', message: 'FoodBase is not configured.' });
   }
 
-  const q = (url.searchParams.get('q') || '').trim();
-  if (!q) return sendJSON(res, 400, { error: 'missing_query', message: 'q is required.' });
+  const rawQ = (url.searchParams.get('q') || '').trim();
+  if (!rawQ) return sendJSON(res, 400, { error: 'missing_query', message: 'q is required.' });
+  const q = fbCleanQuery(rawQ) || rawQ; // normalise the product name before searching
   const lang = (url.searchParams.get('lang') || 'bg').trim();
   let limit = parseInt(url.searchParams.get('limit') || '5', 10);
   if (!Number.isFinite(limit) || limit < 1) limit = 5;
@@ -227,7 +246,7 @@ async function handleFoodbaseSearch(req, res, url) {
   }
 
   const results = out.data.map(fbNormalize);
-  const payload = { query: q, article_url: fbArticleUrl(q), source, count: results.length, results };
+  const payload = { query: rawQ, search_query: q, article_url: fbArticleUrl(q), source, count: results.length, results };
 
   FB_CACHE.set(cacheKey, { at: Date.now(), payload });
   if (FB_CACHE.size > FB_CACHE_MAX) FB_CACHE.delete(FB_CACHE.keys().next().value);
