@@ -1458,6 +1458,20 @@
   const FB_ECO   = { a:'#1E8F4E', b:'#7BC043', c:'#E8C221', d:'#EF7D1A', e:'#DE4A26' };
   const FB_NOVA  = { 1:'#00A040', 2:'#F2C300', 3:'#F07F00', 4:'#D9202B' };
   const fbArt = (q) => `https://foodbase.dev/products?q=${encodeURIComponent(q)}`;
+  // Strip size/units/brand-codes from a product name so FoodBase gets the generic
+  // term ("шоколад Lakhmy 200gr (200 г)" → "шоколад"). Mirrors the server cleaner.
+  const FB_UNITS = ['г','гр','грама','кг','мл','л','бр','броя','g','kg','ml','l','x','х'];
+  function fbCleanQuery(s) {
+    const raw = String(s == null ? '' : s);
+    let toks = raw.replace(/\([^)]*\)/g, ' ').split(/\s+/).filter(t => {
+      const w = t.replace(/[.,]/g, '').toLowerCase();
+      if (!w || /^\d/.test(w) || w.endsWith('%')) return false;
+      return !FB_UNITS.includes(w);
+    });
+    const isCyr = t => /[Ѐ-ӿ]/.test(t);
+    if (toks.some(isCyr)) toks = toks.filter(isCyr);
+    return toks.join(' ').trim() || raw.trim();
+  }
 
   function gradeBadge(label, grade, pal) {
     const cells = ['a','b','c','d','e'].map(l => {
@@ -1498,11 +1512,12 @@
       ${link}`;
   }
   function openNutrition(name) {
-    track('v2-foodbase', { q: name });
+    const q = fbCleanQuery(name);
+    track('v2-foodbase', { q });
     $('#nutri-query').textContent = name;
     $('#nutri-body').innerHTML = `<div class="nutri-msg"><span class="spinner"></span> Търся…</div>`;
     openModal('nutri-modal');
-    fetch(`/api/foodbase/search?q=${encodeURIComponent(name)}`)
+    fetch(`/api/foodbase/search?q=${encodeURIComponent(q)}`)
       .then(r => r.json().then(j => ({ ok: r.ok, j })))
       .then(({ ok, j }) => {
         if (!ok) {

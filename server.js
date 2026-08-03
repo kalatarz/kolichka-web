@@ -90,16 +90,40 @@ function fbArticleUrl(q) {
 const FB_UNIT = new Set(['г', 'гр', 'грама', 'кг', 'мл', 'л', 'бр', 'броя', 'g', 'kg', 'ml', 'l', 'x', 'х']);
 function fbCleanQuery(s) {
   const raw = String(s == null ? '' : s);
-  const out = raw.replace(/\([^)]*\)/g, ' ').split(/\s+/).filter((t) => {
+  let toks = raw.replace(/\([^)]*\)/g, ' ').split(/\s+/).filter((t) => {
     const w = t.replace(/[.,]/g, '').toLowerCase();
     if (!w) return false;
-    if (/^\d/.test(w)) return false;
+    if (/^\d/.test(w)) return false;        // sizes / quantities: "200gr", "650"
     if (w.endsWith('%')) return false;
     if (FB_UNIT.has(w)) return false;
     return true;
-  }).join(' ').trim();
-  const stripped = out.replace(/^[A-Z]{1,3}\s+/, '').trim();
-  return stripped || out || raw.trim();
+  });
+  // When a Cyrillic product term is present, drop pure-Latin tokens — brand
+  // names / store codes ("Lakhmy", "MILKA", "NN") that add no useful signal and
+  // often match nothing — so the search stays on the generic product ("шоколад").
+  const isCyr = (t) => /[Ѐ-ӿ]/.test(t);
+  if (toks.some(isCyr)) toks = toks.filter(isCyr);
+  const out = toks.join(' ').trim();
+  return out || raw.trim();
+}
+// One search attempt: authenticated API first, public fallback second.
+async function fbSearch(q, lang, limit) {
+  const api = await fbFromApi(q, lang, limit);
+  if (api.kind === 'ok') return { kind: 'ok', data: api.data, source: 'api' };
+  const pub = await fbFromPublic(q, lang, limit);
+  if (pub.kind === 'ok') return { kind: 'ok', data: pub.data, source: 'public' };
+  if (api.kind === 'quota' || pub.kind === 'quota') return { kind: 'quota' };
+  if (api.kind === 'auth') return { kind: 'auth' };
+  return { kind: 'error' };
+}
+// Broader forms of a cleaned query, most-precise first, for when the precise
+// query matches nothing ("млечен шоколад с череша" → "млечен шоколад" → "шоколад").
+function fbBroaden(q) {
+  const cyr = q.split(/\s+/).filter((t) => /[Ѐ-ӿ]/.test(t));
+  const out = [];
+  if (cyr.length > 2) out.push(cyr.slice(0, 2).join(' '));
+  if (cyr.length > 1) out.push(cyr[cyr.length - 1]); // head noun is usually last in BG (adj+noun)
+  return out;
 }
 
 function fbGrade(v) {
@@ -226,27 +250,25 @@ async function handleFoodbaseSearch(req, res, url) {
     return sendJSON(res, 200, { ...hit.payload, cached: true });
   }
 
-  // Try the authenticated API first, then fall back to the public endpoint.
-  let source = 'api';
-  let out = await fbFromApi(q, lang, limit);
-  if (out.kind !== 'ok') {
-    const apiKind = out.kind;
-    const pub = await fbFromPublic(q, lang, limit);
-    if (pub.kind === 'ok') { out = pub; source = 'public'; }
-    else {
-      // Neither worked — surface the most informative error.
-      if (apiKind === 'quota' || pub.kind === 'quota') {
-        return sendJSON(res, 429, { error: 'quota', message: 'Дневният лимит към FoodBase е достигнат.' });
-      }
-      if (apiKind === 'auth') {
-        return sendJSON(res, 502, { error: 'auth', message: 'Невалиден ключ за FoodBase.' });
-      }
-      return sendJSON(res, 502, { error: 'upstream_error', message: 'FoodBase не е достъпен в момента.' });
+  // Authenticated API first, public fallback second.
+  const first = await fbSearch(q, lang, limit);
+  if (first.kind !== 'ok') {
+    if (first.kind === 'quota') return sendJSON(res, 429, { error: 'quota', message: 'Дневният лимит към FoodBase е достигнат.' });
+    if (first.kind === 'auth') return sendJSON(res, 502, { error: 'auth', message: 'Невалиден ключ за FoodBase.' });
+    return sendJSON(res, 502, { error: 'upstream_error', message: 'FoodBase не е достъпен в момента.' });
+  }
+  let source = first.source;
+  let usedQ = q;
+  let results = first.data.map(fbNormalize);
+  // Precise query found nothing → broaden toward the generic product term.
+  if (results.length === 0) {
+    for (const b of fbBroaden(q)) {
+      if (!b || b.toLowerCase() === usedQ.toLowerCase()) continue;
+      const more = await fbSearch(b, lang, limit);
+      if (more.kind === 'ok' && more.data.length) { results = more.data.map(fbNormalize); usedQ = b; source = more.source; break; }
     }
   }
-
-  const results = out.data.map(fbNormalize);
-  const payload = { query: rawQ, search_query: q, article_url: fbArticleUrl(q), source, count: results.length, results };
+  const payload = { query: rawQ, search_query: usedQ, article_url: fbArticleUrl(usedQ), source, count: results.length, results };
 
   FB_CACHE.set(cacheKey, { at: Date.now(), payload });
   if (FB_CACHE.size > FB_CACHE_MAX) FB_CACHE.delete(FB_CACHE.keys().next().value);
