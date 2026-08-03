@@ -140,9 +140,9 @@ function sendJSON(res, status, obj) {
   res.end(body);
 }
 
-async function fbGet(url, headers) {
+async function fbGet(url, headers, timeoutMs) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 15000);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs || 12000);
   try {
     const r = await fetch(url, { headers: { Accept: 'application/json', ...headers }, signal: ctrl.signal });
     let body = null;
@@ -160,7 +160,7 @@ async function fbGet(url, headers) {
 async function fbFromApi(q, lang, limit) {
   if (!FOODBASE_API_KEY) return { kind: 'skip' };
   const u = `${FOODBASE_API_BASE}/foods/search?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(lang)}&limit=${limit}`;
-  const r = await fbGet(u, { 'X-API-Key': FOODBASE_API_KEY });
+  const r = await fbGet(u, { 'X-API-Key': FOODBASE_API_KEY }, 12000);
   if (r.status === 429) return { kind: 'quota' };
   if (r.status === 401 || r.status === 403) return { kind: 'auth' };
   // Some quota states arrive as HTTP 200 with an {error} body.
@@ -176,10 +176,16 @@ async function fbFromApi(q, lang, limit) {
 async function fbFromPublic(q, lang, limit) {
   if (!FOODBASE_ALLOW_PUBLIC) return { kind: 'skip' };
   const u = `${FOODBASE_PUBLIC_SEARCH}?q=${encodeURIComponent(q)}&page=1&lang=${encodeURIComponent(lang)}`;
-  const r = await fbGet(u, {});
-  if (r.status === 429) return { kind: 'quota' };
-  if (!r.ok || !r.body || !Array.isArray(r.body.data)) return { kind: 'error' };
-  return { kind: 'ok', data: r.body.data.slice(0, limit) };
+  // foodbase.dev's public endpoint intermittently returns Cloudflare 502/520/524
+  // (or drops the connection) for some queries — retry with a short per-attempt
+  // timeout so a hanging query can't stall the request.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const r = await fbGet(u, {}, 6000);
+    if (r.ok && r.body && Array.isArray(r.body.data)) return { kind: 'ok', data: r.body.data.slice(0, limit) };
+    if (r.status === 429) return { kind: 'quota' };
+    if (attempt < 1) await new Promise((res) => setTimeout(res, 300));
+  }
+  return { kind: 'error' };
 }
 
 async function handleFoodbaseSearch(req, res, url) {
