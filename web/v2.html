@@ -723,7 +723,7 @@
   <!-- FoodBase nutrition scores -->
   <div class="modal" id="nutri-modal" role="dialog" aria-modal="true" aria-label="Хранителни стойности">
     <div class="modal-card">
-      <div class="modal-head"><h2>🥗 Хранителни стойности</h2><button class="modal-x" data-close type="button" aria-label="Затвори">✕</button></div>
+      <div class="modal-head"><h2><svg viewBox="0 0 24 24" width="20" height="20" fill="#178a5e" style="vertical-align:-3px" aria-hidden="true"><path d="M6.05 8.05c-2.73 2.73-2.73 7.15-.02 9.88 1.47-3.4 4.09-6.24 7.36-7.93-2.77 2.34-4.71 5.61-5.46 9.32 2.6 1.23 5.8.78 7.95-1.37C19.43 14.47 20 4 20 4S9.53 4.57 6.05 8.05z"/></svg> Хранителни стойности</h2><button class="modal-x" data-close type="button" aria-label="Затвори">✕</button></div>
       <div class="nutri-sub" id="nutri-query"></div>
       <div class="nutri-body" id="nutri-body"></div>
     </div>
@@ -744,6 +744,8 @@
   const $ = (s, r) => (r || document).querySelector(s);
   const esc = (s) => String(s == null ? '' : s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
   const FOODBASE_ON = !!(window.__KOLICHKA_CONFIG__ || {}).FOODBASE_ENABLED;
+  // Green leaf (Material "eco") — matches the mobile app's nutrition icon.
+  const NUTRI_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M6.05 8.05c-2.73 2.73-2.73 7.15-.02 9.88 1.47-3.4 4.09-6.24 7.36-7.93-2.77 2.34-4.71 5.61-5.46 9.32 2.6 1.23 5.8.78 7.95-1.37C19.43 14.47 20 4 20 4S9.53 4.57 6.05 8.05z"/></svg>';
   const eur = (n) => Number(n).toFixed(2) + ' €';
   const discPct = (price, retail) => (retail && price != null && price < retail - 0.005) ? Math.round((1 - price/retail) * 100) : 0;
   const discBadge = (price, retail) => { const p = discPct(price, retail); return p ? ` <span class="disc">−${p}%</span>` : ''; };
@@ -1049,7 +1051,7 @@
   function prodCard(p, isHero) {
     const inB = state.basket.includes(p.key), inF = state.favorites.includes(p.key);
     const acts = `<div class="acts">
-      ${FOODBASE_ON?`<button class="a-btn a-nutri" data-nutri="${esc(p.name)}" title="Хранителни стойности">🥗</button>`:''}
+      ${FOODBASE_ON?`<button class="a-btn a-nutri" data-nutri="${esc(p.name)}" title="Хранителни стойности">${NUTRI_ICON}</button>`:''}
       <button class="a-btn a-add${inB?' on':''}" data-add="${esc(p.key)}" title="Добави в кошницата">${inB?'✓':'+'}</button>
       <button class="a-btn a-fav${inF?' on':''}" data-fav="${esc(p.key)}" title="Запази в любими">${inF?'♥':'♡'}</button></div>`;
     const more = p.chains.length > 1 ? `<details class="prod-more"><summary>${p.chains.length} вериги — виж всички цени</summary>
@@ -1093,7 +1095,7 @@
         <div class="bc-tag">Най-добра цена около теб</div><div class="bc-name">${esc(hero.name)}</div>
         <div class="bc-row"><div><div class="bc-price">${eur(hero.price)}${discBadge(hero.price,hero.retail)}</div>
           <div class="bc-where">${discPct(hero.price,hero.retail)?`<span class="retail-old">${eur(hero.retail)}</span> `:''}в <b>${esc(hero.chains[0].name)}</b>${hero.chains[0].date?` · <span class="date-pill">${fmtDate(hero.chains[0].date)}</span>`:''}</div></div>
-          <div class="acts">${FOODBASE_ON?`<button class="a-btn a-nutri" data-nutri="${esc(hero.name)}" title="Хранителни стойности">🥗</button>`:''}<button class="a-btn a-add${inB?' on':''}" data-add="${esc(hero.key)}">${inB?'✓':'+'}</button>
+          <div class="acts">${FOODBASE_ON?`<button class="a-btn a-nutri" data-nutri="${esc(hero.name)}" title="Хранителни стойности">${NUTRI_ICON}</button>`:''}<button class="a-btn a-add${inB?' on':''}" data-add="${esc(hero.key)}">${inB?'✓':'+'}</button>
           <button class="a-btn a-fav${inF?' on':''}" data-fav="${esc(hero.key)}">${inF?'♥':'♡'}</button></div></div></div>`;
     }
     if (products.length > 1) {
