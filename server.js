@@ -106,6 +106,22 @@ function fbCleanQuery(s) {
   const out = toks.join(' ').trim();
   return out || raw.trim();
 }
+// Search endpoints return a LIGHT item (no nutrition_summary / ecoscore). The
+// authenticated detail endpoint /foods/{id} has the full macros + ecoscore (same
+// data the website product page shows). Fetch it to enrich the one result the
+// modal displays. Respects the free plan's 1 req/sec (retry once).
+async function fbDetail(id, lang) {
+  if (!FOODBASE_API_KEY || !id) return null;
+  const u = `${FOODBASE_API_BASE}/foods/${encodeURIComponent(id)}?lang=${encodeURIComponent(lang)}`;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const r = await fbGet(u, { 'X-API-Key': FOODBASE_API_KEY }, 8000);
+    if (r.ok && r.body && r.body.id) return r.body;
+    if (r.status === 429 && attempt === 0) { await new Promise((res) => setTimeout(res, 1100)); continue; }
+    return null;
+  }
+  return null;
+}
+
 // One search attempt: authenticated API first, public fallback second.
 async function fbSearch(q, lang, limit) {
   const api = await fbFromApi(q, lang, limit);
@@ -267,6 +283,12 @@ async function handleFoodbaseSearch(req, res, url) {
       const more = await fbSearch(b, lang, limit);
       if (more.kind === 'ok' && more.data.length) { results = more.data.map(fbNormalize); usedQ = b; source = more.source; break; }
     }
+  }
+  // Enrich the top result (shown in the modal) with detail-endpoint macros +
+  // ecoscore that search omits — the "more data" the website product page has.
+  if (results.length && results[0].id) {
+    const det = await fbDetail(results[0].id, lang);
+    if (det) { results[0] = fbNormalize(det); source = source === 'public' ? 'public+detail' : 'detail'; }
   }
   const payload = { query: rawQ, search_query: usedQ, article_url: fbArticleUrl(usedQ), source, count: results.length, results };
 

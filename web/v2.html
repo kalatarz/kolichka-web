@@ -1507,7 +1507,7 @@
     $('#nutri-body').innerHTML = `
       <div class="nutri-prod">${f.image_url?`<img src="${esc(f.image_url)}" alt="" onerror="this.remove()"/>`:''}
         <div><div class="nutri-name">${esc(f.name)}</div>${f.brand?`<div class="nutri-brand">${esc(f.brand)}</div>`:''}</div></div>
-      ${badges.length?`<div class="ns-badges">${badges.join('')}</div>`:`<div class="nutri-msg">Няма оценки за този продукт.</div>`}
+      ${badges.length?`<div class="ns-badges">${badges.join('')}</div>`:(macros?'':`<div class="nutri-msg">Няма оценки за този продукт.</div>`)}
       ${macros?`<div class="ns-label" style="margin-top:14px">На 100 г / 100 мл</div><div class="ns-macros">${macros}</div>`:''}
       ${link}`;
   }
