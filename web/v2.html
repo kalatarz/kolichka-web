@@ -246,7 +246,34 @@
     .a-add.on { background:var(--accent); color:#fff; }
     .a-fav { color:var(--pink); border-color:rgba(200,31,107,.4); background:rgba(200,31,107,.08); }
     .a-fav.on { background:var(--pink); color:#fff; }
+    .a-nutri { color:#178a5e; border-color:rgba(23,138,94,.4); background:rgba(23,138,94,.09); font-size:17px; }
     .a-btn:active { transform:scale(.9); }
+
+    /* FoodBase nutrition */
+    .nutri-head { font-weight:700; font-size:16px; }
+    .nutri-sub { color:var(--muted); font-size:12.5px; margin-top:2px; }
+    .nutri-body { margin-top:14px; min-height:60px; }
+    .nutri-prod { display:flex; gap:12px; align-items:flex-start; }
+    .nutri-prod img { width:54px; height:54px; border-radius:10px; object-fit:cover; flex:0 0 auto; }
+    .nutri-name { font-weight:700; font-size:14.5px; }
+    .nutri-brand { color:var(--muted); font-size:12px; margin-top:2px; }
+    .ns-badges { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }
+    .ns-badge { display:flex; flex-direction:column; align-items:center; gap:5px; }
+    .ns-grades { display:flex; gap:3px; }
+    .ns-cell { width:18px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center;
+      color:#fff; font-weight:800; font-size:11px; }
+    .ns-cell.on { width:26px; height:30px; font-size:15px; border:1.4px solid rgba(0,0,0,.35); }
+    .ns-nova { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+      color:#fff; font-weight:800; font-size:15px; }
+    .ns-label { font-size:10.5px; color:var(--muted); }
+    .ns-macros { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+    .ns-macro { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:7px 10px; }
+    .ns-macro .mk { font-size:10.5px; color:var(--muted); display:block; }
+    .ns-macro .mv { font-size:13.5px; font-weight:800; }
+    .nutri-link { display:block; text-align:center; margin-top:16px; text-decoration:none;
+      background:#178a5e; color:#fff; font-weight:700; padding:11px; border-radius:12px; }
+    .nutri-src { text-align:center; font-size:10.5px; color:var(--muted); margin-top:8px; }
+    .nutri-msg { text-align:center; color:var(--muted); font-size:13px; padding:18px 0; }
 
     .store-map { display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }
     @media (max-width:680px) { .store-map { grid-template-columns:1fr; } }
@@ -693,6 +720,15 @@
     </div>
   </div>
 
+  <!-- FoodBase nutrition scores -->
+  <div class="modal" id="nutri-modal" role="dialog" aria-modal="true" aria-label="Хранителни стойности">
+    <div class="modal-card">
+      <div class="modal-head"><h2><svg viewBox="0 0 24 24" width="20" height="20" fill="#178a5e" style="vertical-align:-3px" aria-hidden="true"><path d="M6.05 8.05c-2.73 2.73-2.73 7.15-.02 9.88 1.47-3.4 4.09-6.24 7.36-7.93-2.77 2.34-4.71 5.61-5.46 9.32 2.6 1.23 5.8.78 7.95-1.37C19.43 14.47 20 4 20 4S9.53 4.57 6.05 8.05z"/></svg> Хранителни стойности</h2><button class="modal-x" data-close type="button" aria-label="Затвори">✕</button></div>
+      <div class="nutri-sub" id="nutri-query"></div>
+      <div class="nutri-body" id="nutri-body"></div>
+    </div>
+  </div>
+
   <!-- Scroll-triggered subscribe nudge -->
   <div class="nudge" id="sub-nudge">
     <button class="nudge-x" id="nudge-x" type="button" aria-label="Скрий">×</button>
@@ -707,6 +743,15 @@
   'use strict';
   const $ = (s, r) => (r || document).querySelector(s);
   const esc = (s) => String(s == null ? '' : s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+  const FOODBASE_ON = !!(window.__KOLICHKA_CONFIG__ || {}).FOODBASE_ENABLED;
+  // Green leaf (Material "eco") — matches the mobile app's nutrition icon.
+  const NUTRI_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M6.05 8.05c-2.73 2.73-2.73 7.15-.02 9.88 1.47-3.4 4.09-6.24 7.36-7.93-2.77 2.34-4.71 5.61-5.46 9.32 2.6 1.23 5.8.78 7.95-1.37C19.43 14.47 20 4 20 4S9.53 4.57 6.05 8.05z"/></svg>';
+  // FoodBase is a FOOD database — hide the leaf on obvious non-food (soap,
+  // detergent, cosmetics, paper…) so it never dead-ends. Promotions especially
+  // are full of household chemistry.
+  const FB_NONFOOD = ['сапун','препарат','шампоан','паста за зъби','тоалетна','салфет','кърпи','памперс','пелен','дезодорант','почист','миещ','белина','омекотит','перилен','прах за пране','освежит','душ гел','гел за душ','хартия','козметик','крем за ръце','крем за лице'];
+  const fbNutriBtn = (name) => (FOODBASE_ON && name && !FB_NONFOOD.some(w => String(name).toLowerCase().includes(w)))
+    ? `<button class="a-btn a-nutri" data-nutri="${esc(name)}" title="Хранителни стойности">${NUTRI_ICON}</button>` : '';
   const eur = (n) => Number(n).toFixed(2) + ' €';
   const discPct = (price, retail) => (retail && price != null && price < retail - 0.005) ? Math.round((1 - price/retail) * 100) : 0;
   const discBadge = (price, retail) => { const p = discPct(price, retail); return p ? ` <span class="disc">−${p}%</span>` : ''; };
@@ -1012,6 +1057,7 @@
   function prodCard(p, isHero) {
     const inB = state.basket.includes(p.key), inF = state.favorites.includes(p.key);
     const acts = `<div class="acts">
+      ${fbNutriBtn(p.name)}
       <button class="a-btn a-add${inB?' on':''}" data-add="${esc(p.key)}" title="Добави в кошницата">${inB?'✓':'+'}</button>
       <button class="a-btn a-fav${inF?' on':''}" data-fav="${esc(p.key)}" title="Запази в любими">${inF?'♥':'♡'}</button></div>`;
     const more = p.chains.length > 1 ? `<details class="prod-more"><summary>${p.chains.length} вериги — виж всички цени</summary>
@@ -1055,7 +1101,7 @@
         <div class="bc-tag">Най-добра цена около теб</div><div class="bc-name">${esc(hero.name)}</div>
         <div class="bc-row"><div><div class="bc-price">${eur(hero.price)}${discBadge(hero.price,hero.retail)}</div>
           <div class="bc-where">${discPct(hero.price,hero.retail)?`<span class="retail-old">${eur(hero.retail)}</span> `:''}в <b>${esc(hero.chains[0].name)}</b>${hero.chains[0].date?` · <span class="date-pill">${fmtDate(hero.chains[0].date)}</span>`:''}</div></div>
-          <div class="acts"><button class="a-btn a-add${inB?' on':''}" data-add="${esc(hero.key)}">${inB?'✓':'+'}</button>
+          <div class="acts">${fbNutriBtn(hero.name)}<button class="a-btn a-add${inB?' on':''}" data-add="${esc(hero.key)}">${inB?'✓':'+'}</button>
           <button class="a-btn a-fav${inF?' on':''}" data-fav="${esc(hero.key)}">${inF?'♥':'♡'}</button></div></div></div>`;
     }
     if (products.length > 1) {
@@ -1098,13 +1144,14 @@
       return `<div class="prod promo"><div class="prod-top"><div class="prod-info">
         <span class="promo-pct">−${p.pct}%</span><div class="prod-name">${esc(p.name)}</div>
         <div class="prod-sub"><span class="pp-retail">${eur(p.retail)}</span><b>${eur(p.promo)}</b>${p.pct?` <span class="disc">−${p.pct}%</span>`:''} · ${esc(p.chain)}</div></div>
-        <div class="acts"><button class="a-btn a-add${inB?' on':''}" data-add="${esc(p.key)}">${inB?'✓':'+'}</button>
+        <div class="acts">${fbNutriBtn(p.name)}<button class="a-btn a-add${inB?' on':''}" data-add="${esc(p.key)}">${inB?'✓':'+'}</button>
         <button class="a-btn a-fav${inF?' on':''}" data-fav="${esc(p.key)}">${inF?'♥':'♡'}</button></div></div></div>`; }).join('');
     $('#results').innerHTML = html;
   }
 
   // ===================== results delegated clicks
   $('#results').addEventListener('click', e => {
+    const nut = e.target.closest('[data-nutri]'); if (nut) { openNutrition(nut.dataset.nutri); return; }
     const add = e.target.closest('[data-add]'); if (add) { toggleBasket(add.dataset.add); rerender(); bumpFab(); return; }
     const fav = e.target.closest('[data-fav]'); if (fav) { toggleFav(fav.dataset.fav); rerender(); return; }
     const share = e.target.closest('[data-share]'); if (share) { shareBasket(); return; }
@@ -1413,6 +1460,83 @@
   // ===================== FOOTER: modals, feedback, subscribe, nudge, stats
   function openModal(id) { const m = $('#' + id); if (m) m.classList.add('open'); }
   function closeModal(m) { m.classList.remove('open'); }
+
+  // ===================== FoodBase nutrition (foodbase.dev)
+  const FB_NUTRI = { a:'#038141', b:'#85BB2F', c:'#FECB02', d:'#EE8100', e:'#E63E11' };
+  const FB_ECO   = { a:'#1E8F4E', b:'#7BC043', c:'#E8C221', d:'#EF7D1A', e:'#DE4A26' };
+  const FB_NOVA  = { 1:'#00A040', 2:'#F2C300', 3:'#F07F00', 4:'#D9202B' };
+  const fbArt = (q) => `https://foodbase.dev/products?q=${encodeURIComponent(q)}`;
+  // Strip size/units/brand-codes from a product name so FoodBase gets the generic
+  // term ("шоколад Lakhmy 200gr (200 г)" → "шоколад"). Mirrors the server cleaner.
+  const FB_UNITS = ['г','гр','грама','кг','мл','л','бр','броя','g','kg','ml','l','x','х'];
+  function fbCleanQuery(s) {
+    const raw = String(s == null ? '' : s);
+    let toks = raw.replace(/\([^)]*\)/g, ' ').split(/\s+/).filter(t => {
+      const w = t.replace(/[.,]/g, '').toLowerCase();
+      if (!w || /^\d/.test(w) || w.endsWith('%')) return false;
+      return !FB_UNITS.includes(w);
+    });
+    const isCyr = t => /[Ѐ-ӿ]/.test(t);
+    if (toks.some(isCyr)) toks = toks.filter(isCyr);
+    return toks.join(' ').trim() || raw.trim();
+  }
+
+  function gradeBadge(label, grade, pal) {
+    const cells = ['a','b','c','d','e'].map(l => {
+      const on = l === grade, col = pal[l] || '#999';
+      return `<div class="ns-cell${on?' on':''}" style="background:${on?col:col+'47'}">${l.toUpperCase()}</div>`;
+    }).join('');
+    return `<div class="ns-badge"><div class="ns-grades">${cells}</div><div class="ns-label">${label}</div></div>`;
+  }
+  function novaBadge(g) {
+    return `<div class="ns-badge"><div class="ns-nova" style="background:${FB_NOVA[g]||'#999'}">${g}</div><div class="ns-label">NOVA</div></div>`;
+  }
+  function macroChip(label, v, unit) {
+    if (v == null) return '';
+    const val = v === Math.round(v) ? String(v) : v.toFixed(1);
+    return `<div class="ns-macro"><span class="mk">${label}</span><span class="mv">${val} ${unit}</span></div>`;
+  }
+  function renderNutrition(d) {
+    const link = `<a class="nutri-link" href="${esc(d.article_url || fbArt(d.query))}" target="_blank" rel="noopener">Виж във FoodBase ↗</a><div class="nutri-src">Данни от foodbase.dev</div>`;
+    if (!d.results || !d.results.length) {
+      $('#nutri-body').innerHTML = `<div class="nutri-msg">Няма намерен продукт във FoodBase.</div>${link}`;
+      return;
+    }
+    const f = d.results[0], badges = [];
+    if (f.nutriscore) badges.push(gradeBadge('Nutri-Score', f.nutriscore, FB_NUTRI));
+    if (f.ecoscore) badges.push(gradeBadge('Eco-Score', f.ecoscore, FB_ECO));
+    if (f.nova_group) badges.push(novaBadge(f.nova_group));
+    const n = f.nutrition || {};
+    const macros = [
+      macroChip('Калории', n.energy_kcal, 'kcal'), macroChip('Протеини', n.proteins_g, 'г'),
+      macroChip('Въглехидрати', n.carbs_g, 'г'), macroChip('от които захари', n.sugars_g, 'г'),
+      macroChip('Мазнини', n.fat_g, 'г'), macroChip('Фибри', n.fiber_g, 'г'),
+    ].join('');
+    $('#nutri-body').innerHTML = `
+      <div class="nutri-prod">${f.image_url?`<img src="${esc(f.image_url)}" alt="" onerror="this.remove()"/>`:''}
+        <div><div class="nutri-name">${esc(f.name)}</div>${f.brand?`<div class="nutri-brand">${esc(f.brand)}</div>`:''}</div></div>
+      ${badges.length?`<div class="ns-badges">${badges.join('')}</div>`:(macros?'':`<div class="nutri-msg">Няма оценки за този продукт.</div>`)}
+      ${macros?`<div class="ns-label" style="margin-top:14px">На 100 г / 100 мл</div><div class="ns-macros">${macros}</div>`:''}
+      ${link}`;
+  }
+  function openNutrition(name) {
+    const q = fbCleanQuery(name);
+    track('v2-foodbase', { q });
+    $('#nutri-query').textContent = name;
+    $('#nutri-body').innerHTML = `<div class="nutri-msg"><span class="spinner"></span> Търся…</div>`;
+    openModal('nutri-modal');
+    fetch(`/api/foodbase/search?q=${encodeURIComponent(q)}`)
+      .then(r => r.json().then(j => ({ ok: r.ok, j })))
+      .then(({ ok, j }) => {
+        if (!ok) {
+          $('#nutri-body').innerHTML = `<div class="nutri-msg">${esc(j && j.message ? j.message : 'Грешка при заявката.')}</div>` +
+            `<a class="nutri-link" href="${esc(fbArt(name))}" target="_blank" rel="noopener">Виж във FoodBase ↗</a>`;
+          return;
+        }
+        renderNutrition(j);
+      })
+      .catch(() => { $('#nutri-body').innerHTML = `<div class="nutri-msg">⚠️ Грешка. Опитай пак.</div>`; });
+  }
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) closeModal(m); }));
   document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(closeModal); });
   $('#open-faq').addEventListener('click', () => { openModal('faq-modal'); track('v2-faq-open', {}); });

@@ -55,6 +55,27 @@ All runtime configuration is loaded via `.env` (dev server) or `web/config.js` (
 | `DATA_SOURCE_URL` | Data source attribution link | *(empty)* |
 | `ANALYTICS_SCRIPT` | Umami-compatible analytics script URL | *(disabled)* |
 | `ANALYTICS_WEBSITE_ID` | Analytics website ID | *(disabled)* |
+| `FOODBASE_API_KEY` | [foodbase.dev](https://foodbase.dev) API key for nutrition scores | *(empty)* |
+| `FOODBASE_API_BASE` | FoodBase API base URL (override for self-hosted/mock) | `https://foodbase.dev/v1` |
+| `FOODBASE_ALLOW_PUBLIC` | Allow the keyless public fallback (see below) | `true` |
+
+### Nutrition scores (FoodBase)
+
+Product cards show a green leaf that opens Nutri-Score, Eco-Score, NOVA group and
+per-100 g macros from [foodbase.dev](https://foodbase.dev).
+
+The lookup is a **backend function** in `server.js` — `GET /api/foodbase/search?q=&lang=bg&limit=`
+— so the API key stays server-side and never reaches the browser. It normalises the
+product name (strips sizes, units and store codes), broadens the query when the
+precise name matches nothing, enriches the top hit via the detail endpoint, and
+caches results for 10 minutes to conserve quota.
+
+With no key set, `FOODBASE_ALLOW_PUBLIC=true` (the default) falls back to FoodBase's
+public keyless search, which returns scores but no macros. Set `FOODBASE_ALLOW_PUBLIC=false`
+with no key to disable the feature entirely — the frontend then hides the leaf.
+
+> This feature needs the Node server (`npm start`, or `Dockerfile.node`). Purely static
+> hosting has nowhere to run the backend function, so leave `FOODBASE_ENABLED` false there.
 
 ## Static Hosting (Production)
 
@@ -112,6 +133,7 @@ window.__KOLICHKA_CONFIG__ = {
   DATA_SOURCE_URL: 'https://kolkostruva.bg',
   ANALYTICS_SCRIPT: '',
   ANALYTICS_WEBSITE_ID: '',
+  FOODBASE_ENABLED: false,   // needs the Node server — no backend function when static
 };
 ```
 
@@ -128,7 +150,9 @@ kolichka-web/
 │   ├── push-sw.js          # Push notification service worker
 │   ├── favicon.ico
 │   └── favicon-512.png
-├── server.js               # Node.js dev/proxy server
+├── server.js               # Node.js dev/proxy server + backend functions
+├── Dockerfile.node         # Node runtime image (needed for /api/foodbase/search)
+├── docker-compose.staging.yml
 ├── package.json
 ├── .env.example            # Environment template
 ├── .gitignore
@@ -145,6 +169,9 @@ The frontend expects a Kolichka-compatible backend serving these endpoints:
 - `GET /api/stores/nearby?lat=&lng=&radius=` — Stores near coordinates
 - `GET /api/compare?store_ids=&product_name=` — Price comparison
 - `GET /version.json` — Version/health check
+
+`GET /api/foodbase/search` is served by `server.js` itself, not by the backend — see
+[Nutrition scores](#nutrition-scores-foodbase).
 
 ## License
 

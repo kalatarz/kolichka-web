@@ -1,0 +1,24 @@
+# Staging: Node runtime so the FoodBase backend function runs server-side.
+# Secrets come from .env (gitignored) — FOODBASE_API_KEY especially.
+#
+#   docker compose -f docker-compose.staging.yml up -d --build
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      # Real backend for products/promotions/etc. so staging shows live data.
+      - API_PROXY_URL=${API_PROXY_URL:-https://kolichka.gotvach.com}
+      - APP_NAME=${APP_NAME:-Kolichka (staging)}
+      - APP_URL=${APP_URL:-}
+      - ANALYTICS_SCRIPT=${ANALYTICS_SCRIPT:-}
+      - ANALYTICS_WEBSITE_ID=${ANALYTICS_WEBSITE_ID:-}
+      # FoodBase server-side key (from .env — never hard-code here).
+      - FOODBASE_API_KEY=${FOODBASE_API_KEY:-}
+      # Keyless public fallback — keeps nutrition working once the daily quota is spent.
+      - FOODBASE_ALLOW_PUBLIC=${FOODBASE_ALLOW_PUBLIC:-true}
+    restart: unless-stopped

@@ -1,0 +1,20 @@
+# Node runtime image — serves web/ AND hosts backend functions (FoodBase),
+# proxying the rest of /api to the real backend. Used for staging where the
+# FoodBase nutrition endpoint must run server-side.
+#
+#   docker build -f Dockerfile.node -t kolichka-web-node .
+#   docker run -p 3000:3000 --env-file .env kolichka-web-node
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY server.js ./
+COPY web/ ./web/
+
+ENV PORT=3000
+EXPOSE 3000
+
+CMD ["node", "server.js"]
