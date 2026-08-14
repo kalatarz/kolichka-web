@@ -19,4 +19,6 @@ services:
       - ANALYTICS_WEBSITE_ID=${ANALYTICS_WEBSITE_ID:-}
       # FoodBase server-side key (from .env — never hard-code here).
       - FOODBASE_API_KEY=${FOODBASE_API_KEY:-}
+      # Keyless public fallback — keeps nutrition working once the daily quota is spent.
+      - FOODBASE_ALLOW_PUBLIC=${FOODBASE_ALLOW_PUBLIC:-true}
     restart: unless-stopped

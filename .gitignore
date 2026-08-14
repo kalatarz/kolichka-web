@@ -17,3 +17,6 @@ Thumbs.db
 # Build artifacts (if any added later)
 dist/
 build/
+
+# Local reference copies of the private backend — never publish these
+prod_server.js
