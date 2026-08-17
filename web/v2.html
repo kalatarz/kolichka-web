@@ -451,6 +451,7 @@
     .site-foot .foot-cta { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:14px; }
     .foot-cta a, .foot-cta button { border-radius:999px; padding:9px 15px; font-size:13px; font-weight:700; text-decoration:none; border:1px solid var(--line); cursor:pointer; }
     .foot-discord { background:#5865F2; color:#fff !important; border-color:#5865F2 !important; }
+    .foot-chef { background:#178a5e; color:#fff !important; border-color:#178a5e !important; }
     .foot-sub { background:var(--accent); color:#fff; border-color:transparent; }
     .foot-fb { background:var(--card); color:var(--text); }
     .foot-score { display:block; margin:-4px auto 14px; background:none; border:none; color:var(--muted); font:inherit; font-size:12.5px; cursor:pointer; }
@@ -628,6 +629,9 @@
   <footer class="site-foot">
     <div class="foot-cta">
       <a class="foot-discord" id="discord-link" href="#" target="_blank" rel="noopener">💬 Discord</a>
+      <!-- Recipes from what you already bought — the no-basket entry point to the
+           same destination as the basket's "Сготви с това". -->
+      <a class="foot-chef" id="minichef-link" href="https://minichef.gotvach.com/?lang=bg&amp;from=kolichka-footer" target="_blank" rel="noopener">👨‍🍳 miniChef — рецепти</a>
       <button class="foot-sub" id="open-sub" type="button">📨 Абонирай се за промоции</button>
       <button class="foot-fb" id="open-fb" type="button">📣 Обратна връзка</button>
     </div>
@@ -1343,6 +1347,10 @@
     window.open(url, '_blank', 'noopener');
   }
   $('#cook-basket-btn').addEventListener('click', cookWithBasket);
+  // Footer entry point: same destination, no basket attached, separate `from=` so
+  // the funnel can tell an idle click from a basket hand-off.
+  const mcLink = document.getElementById('minichef-link');
+  if (mcLink) mcLink.addEventListener('click', () => track('v2-minichef-footer', {}));
   $('#shared-x').addEventListener('click', () => { $('#shared-banner').hidden = true; });
   $('#shared-new').addEventListener('click', (e) => { e.preventDefault(); state.basket = []; save('kolichka.basket', state.basket); syncBasketUrl(); $('#shared-banner').hidden = true; bumpFab(); renderSheet(); });
 
