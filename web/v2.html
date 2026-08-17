@@ -394,6 +394,12 @@
     .cmp-btn { width:100%; margin-top:16px; border:none; background:var(--accent); color:#fff; font-weight:800; font-size:16px;
       border-radius:13px; padding:15px; box-shadow:0 4px 18px rgba(23,138,94,.3); }
     .cmp-btn:disabled { opacity:.5; }
+    /* Basket CTAs, stacked: comparing prices is the job, cooking is the offer.
+       Stacked rather than side-by-side so neither label truncates on a phone. */
+    .b-cta { display:flex; flex-direction:column; gap:9px; }
+    .cook-btn { width:100%; border:1px solid var(--accent); background:var(--accent-soft); color:var(--accent);
+      font-weight:700; font-size:14.5px; border-radius:12px; padding:12px; }
+    .cook-btn:active { transform:scale(.99); }
 
     /* basket comparison (rendered in main area) */
     .b-winner { background:var(--best-bg); border:1px solid var(--best); border-radius:14px; padding:14px 16px; }
@@ -599,7 +605,13 @@
       <div class="pane on" id="pane-basket">
         <div class="b-items" id="b-items"></div>
         <div id="b-total"></div>
-        <button class="cmp-btn" id="cmp-btn" type="button">Сравни по магазини →</button>
+        <div class="b-cta">
+          <button class="cmp-btn" id="cmp-btn" type="button">Сравни по магазини →</button>
+          <!-- Sits under the total, on the basket tab only: the moment someone is
+               looking at what they are about to buy is the moment "what do I cook
+               with this?" lands. Secondary styling — an offer, not a detour. -->
+          <button class="cook-btn" id="cook-basket-btn" type="button">👨‍🍳 Сготви с това</button>
+        </div>
       </div>
 
       <div class="pane" id="pane-favs">
@@ -1317,6 +1329,20 @@
     window.prompt('Копирай линка и го изпрати:', url);
   }
   $('#share-basket-btn').addEventListener('click', shareBasket);
+
+  // Send the basket to miniChef to be cooked. A link, not an integration: miniChef reads
+  // kolichka's own ?b= string, so there is nothing to keep in sync.
+  function cookWithBasket() {
+    if (!state.basket.length) { showToast('Кошницата е празна'); return; }
+    track('v2-basket-cook', { n: state.basket.length });
+    const url = 'https://minichef.gotvach.com/?cook='
+      + encodeURIComponent(encodeBasketUrl(state.basket))
+      + '&lang=bg&from=kolichka';
+    // A new tab, not a navigation: the shopper is mid-shop and losing the basket view
+    // would be a real cost.
+    window.open(url, '_blank', 'noopener');
+  }
+  $('#cook-basket-btn').addEventListener('click', cookWithBasket);
   $('#shared-x').addEventListener('click', () => { $('#shared-banner').hidden = true; });
   $('#shared-new').addEventListener('click', (e) => { e.preventDefault(); state.basket = []; save('kolichka.basket', state.basket); syncBasketUrl(); $('#shared-banner').hidden = true; bumpFab(); renderSheet(); });
 
